@@ -31,6 +31,9 @@ const LANE_LENGTH_FEET = 60;
 const LANE_LENGTH_WORLD = 36;
 const WORLD_UNITS_PER_FOOT = LANE_LENGTH_WORLD / LANE_LENGTH_FEET;
 const LANE_FRONT_Z = 8;
+const PIN_HEIGHT_INCHES = 15;
+const PIN_REFERENCE_HEIGHT = 1.66;
+const PIN_HEIGHT_WORLD = (PIN_HEIGHT_INCHES / 12) * WORLD_UNITS_PER_FOOT;
 
 const lane = new THREE.Mesh(
   new THREE.BoxGeometry(LANE_WIDTH, 0.2, LANE_LENGTH_WORLD),
@@ -174,10 +177,12 @@ function createPin(x, z) {
       stripeMaterial
     );
     stripeMesh.position.y = stripe.y;
+    stripeMesh.rotation.x = Math.PI / 2;
     stripeMesh.castShadow = true;
     pin.add(stripeMesh);
   }
 
+  pin.scale.setScalar(PIN_HEIGHT_WORLD / PIN_REFERENCE_HEIGHT);
   pin.position.set(x, 0, z);
   scene.add(pin);
 }
