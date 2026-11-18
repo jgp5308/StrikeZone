@@ -33,7 +33,6 @@ const LANE_WIDTH_FEET = (BOARD_COUNT * BOARD_WIDTH_INCHES) / 12;
 const LANE_WIDTH = LANE_WIDTH_FEET * WORLD_UNITS_PER_FOOT;
 const BOARD_WIDTH = LANE_WIDTH / BOARD_COUNT;
 const LANE_FRONT_Z = 8;
-const LANE_SURFACE_Y = 0.1;
 const PLAYER_VIEW_HEIGHT_FEET = 4;
 const PLAYER_HEIGHT_WORLD = PLAYER_VIEW_HEIGHT_FEET * WORLD_UNITS_PER_FOOT;
 camera.position.y = PLAYER_HEIGHT_WORLD;
@@ -137,64 +136,6 @@ const floor = new THREE.Mesh(
 floor.position.set(0, -0.2, -8);
 floor.receiveShadow = true;
 scene.add(floor);
-
-const gutterMaterial = new THREE.MeshStandardMaterial({
-  color: 0x050505,
-  roughness: 0.2,
-  metalness: 0.15,
-});
-const gutterLipMaterial = new THREE.MeshStandardMaterial({
-  color: 0x303030,
-  roughness: 0.3,
-  metalness: 0.2,
-});
-const GUTTER_WIDTH_INCHES = 9.25;
-const GUTTER_WIDTH_WORLD = (GUTTER_WIDTH_INCHES / 12) * WORLD_UNITS_PER_FOOT;
-const GUTTER_EDGE_DROP_INCHES = 1.875;
-const GUTTER_EDGE_DROP_WORLD =
-  (GUTTER_EDGE_DROP_INCHES / 12) * WORLD_UNITS_PER_FOOT;
-const GUTTER_RADIUS_WORLD = GUTTER_WIDTH_WORLD / 2;
-for (const side of [-1, 1]) {
-  const gutterX = side * (LANE_WIDTH / 2 + GUTTER_WIDTH_WORLD / 2);
-  const gutterGeometry = new THREE.CylinderGeometry(
-    1,
-    1,
-    LANE_LENGTH_WORLD,
-    32,
-    1,
-    true,
-    0,
-    Math.PI
-  );
-
-  const gutter = new THREE.Mesh(gutterGeometry, gutterMaterial);
-  gutter.scale.set(GUTTER_RADIUS_WORLD, 1, GUTTER_RADIUS_WORLD);
-  gutter.rotation.x = -Math.PI / 2;
-  gutter.position.set(
-    gutterX,
-    LANE_SURFACE_Y - GUTTER_EDGE_DROP_WORLD,
-    lane.position.z
-  );
-  gutter.receiveShadow = true;
-  scene.add(gutter);
-
-  for (const lipX of [
-    side * (LANE_WIDTH / 2),
-    side * (LANE_WIDTH / 2 + GUTTER_WIDTH_WORLD),
-  ]) {
-    const gutterLip = new THREE.Mesh(
-      new THREE.BoxGeometry(0.035, 0.025, LANE_LENGTH_WORLD),
-      gutterLipMaterial
-    );
-    gutterLip.position.set(
-      lipX,
-      LANE_SURFACE_Y - GUTTER_EDGE_DROP_WORLD + 0.01,
-      lane.position.z
-    );
-    gutterLip.receiveShadow = true;
-    scene.add(gutterLip);
-  }
-}
 
 function createPin(x, z) {
   const pin = new THREE.Group();
