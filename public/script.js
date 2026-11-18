@@ -306,7 +306,7 @@ function updateMovement(deltaSeconds) {
   }
 
   camera.position.x = THREE.MathUtils.clamp(camera.position.x, -6, 6);
-  camera.position.z = THREE.MathUtils.clamp(camera.position.z, -27, 7.5);
+  camera.position.z = Math.max(camera.position.z, -27);
 }
 
 let lastFrameTime = 0;
