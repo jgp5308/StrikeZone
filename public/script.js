@@ -136,21 +136,47 @@ for (const x of [-(LANE_WIDTH / 2 + 0.225), LANE_WIDTH / 2 + 0.225]) {
 
 function createPin(x, z) {
   const pin = new THREE.Group();
+
+  const pinProfile = [
+    new THREE.Vector2(0.16, 0),
+    new THREE.Vector2(0.2, 0.06),
+    new THREE.Vector2(0.23, 0.25),
+    new THREE.Vector2(0.24, 0.45),
+    new THREE.Vector2(0.21, 0.68),
+    new THREE.Vector2(0.16, 0.82),
+    new THREE.Vector2(0.12, 0.98),
+    new THREE.Vector2(0.13, 1.1),
+    new THREE.Vector2(0.18, 1.18),
+    new THREE.Vector2(0.19, 1.38),
+    new THREE.Vector2(0.17, 1.52),
+    new THREE.Vector2(0.1, 1.62),
+    new THREE.Vector2(0, 1.66),
+  ];
+
   const body = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.16, 0.24, 0.9, 24),
+    new THREE.LatheGeometry(pinProfile, 32),
     new THREE.MeshStandardMaterial({ color: 0xf5f5f5, roughness: 0.35 })
   );
-  body.position.y = 0.55;
   body.castShadow = true;
   pin.add(body);
 
-  const neck = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.1, 0.15, 0.25, 24),
-    new THREE.MeshStandardMaterial({ color: 0xf5f5f5 })
-  );
-  neck.position.y = 1.1;
-  neck.castShadow = true;
-  pin.add(neck);
+  const stripeMaterial = new THREE.MeshStandardMaterial({
+    color: 0xb51f2a,
+    roughness: 0.4,
+  });
+
+  for (const stripe of [
+    { radius: 0.13, y: 1.1 },
+    { radius: 0.15, y: 1.2 },
+  ]) {
+    const stripeMesh = new THREE.Mesh(
+      new THREE.TorusGeometry(stripe.radius, 0.022, 10, 32),
+      stripeMaterial
+    );
+    stripeMesh.position.y = stripe.y;
+    stripeMesh.castShadow = true;
+    pin.add(stripeMesh);
+  }
 
   pin.position.set(x, 0, z);
   scene.add(pin);
