@@ -39,6 +39,9 @@ camera.position.y = PLAYER_HEIGHT_WORLD;
 const PIN_HEIGHT_INCHES = 15;
 const PIN_REFERENCE_HEIGHT = 1.66;
 const PIN_HEIGHT_WORLD = (PIN_HEIGHT_INCHES / 12) * WORLD_UNITS_PER_FOOT;
+const BALL_DIAMETER_INCHES = 8.59;
+const BALL_DIAMETER_WORLD = (BALL_DIAMETER_INCHES / 12) * WORLD_UNITS_PER_FOOT;
+const BALL_RADIUS_WORLD = BALL_DIAMETER_WORLD / 2;
 
 const lane = new THREE.Mesh(
   new THREE.BoxGeometry(LANE_WIDTH, 0.2, LANE_LENGTH_WORLD),
@@ -207,10 +210,10 @@ for (let row = 0; row < 4; row += 1) {
 }
 
 const ball = new THREE.Mesh(
-  new THREE.SphereGeometry(0.35, 32, 20),
+  new THREE.SphereGeometry(BALL_RADIUS_WORLD, 32, 20),
   new THREE.MeshStandardMaterial({ color: 0x2864d7, roughness: 0.25, metalness: 0.2 })
 );
-ball.position.set(0, 0.45, 5.5);
+ball.position.set(0, 0.1 + BALL_RADIUS_WORLD, 5.5);
 ball.castShadow = true;
 scene.add(ball);
 
