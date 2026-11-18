@@ -45,6 +45,8 @@ const PIN_HEIGHT_INCHES = 15;
 const PIN_REFERENCE_HEIGHT = 1.66;
 const PIN_HEIGHT_WORLD = (PIN_HEIGHT_INCHES / 12) * WORLD_UNITS_PER_FOOT;
 const PIN_FRONT_Z = LANE_FRONT_Z - PIN_FRONT_DISTANCE_FEET * WORLD_UNITS_PER_FOOT;
+const PIN_SPACING_INCHES = 12;
+const PIN_SPACING_WORLD = (PIN_SPACING_INCHES / 12) * WORLD_UNITS_PER_FOOT;
 const BALL_DIAMETER_INCHES = 8.59;
 const BALL_DIAMETER_WORLD = (BALL_DIAMETER_INCHES / 12) * WORLD_UNITS_PER_FOOT;
 const BALL_RADIUS_WORLD = BALL_DIAMETER_WORLD / 2;
@@ -277,7 +279,10 @@ function createPin(x, z) {
 
 for (let row = 0; row < 4; row += 1) {
   for (let column = 0; column <= row; column += 1) {
-    createPin((column - row / 2) * 0.55, PIN_FRONT_Z - row * 0.6);
+    createPin(
+      (column - row / 2) * PIN_SPACING_WORLD,
+      PIN_FRONT_Z - row * PIN_SPACING_WORLD
+    );
   }
 }
 
