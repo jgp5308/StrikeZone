@@ -66,24 +66,29 @@ const darkBrownMaterial = new THREE.MeshStandardMaterial({
   color: 0x4b2618,
   roughness: 0.75,
 });
-const brownSectionStartFeet = 34;
 const brownSectionLengthFeet = 3;
-const brownSectionCenterZ =
-  LANE_FRONT_Z - (brownSectionStartFeet + brownSectionLengthFeet / 2) * WORLD_UNITS_PER_FOOT;
 
-for (const boardNumber of [15, 25]) {
-  const brownSection = new THREE.Mesh(
-    new THREE.BoxGeometry(
-      BOARD_WIDTH * 0.96,
-      0.018,
-      brownSectionLengthFeet * WORLD_UNITS_PER_FOOT
-    ),
-    darkBrownMaterial
-  );
-  brownSection.position.set(boardCenter(boardNumber), 0.12, brownSectionCenterZ);
-  brownSection.receiveShadow = true;
-  scene.add(brownSection);
+function addBrownSections(boardNumbers, startFeet) {
+  const sectionCenterZ =
+    LANE_FRONT_Z - (startFeet + brownSectionLengthFeet / 2) * WORLD_UNITS_PER_FOOT;
+
+  for (const boardNumber of boardNumbers) {
+    const brownSection = new THREE.Mesh(
+      new THREE.BoxGeometry(
+        BOARD_WIDTH * 0.96,
+        0.018,
+        brownSectionLengthFeet * WORLD_UNITS_PER_FOOT
+      ),
+      darkBrownMaterial
+    );
+    brownSection.position.set(boardCenter(boardNumber), 0.12, sectionCenterZ);
+    brownSection.receiveShadow = true;
+    scene.add(brownSection);
+  }
 }
+
+addBrownSections([15, 25], 34);
+addBrownSections([10, 30], 40);
 
 const targetBoardNumbers = [5, 10, 15, 20, 25, 30, 35];
 const arrowDistancesFeet = [12, 13 + 1 / 3, 14 + 2 / 3, 16, 14 + 2 / 3, 13 + 1 / 3, 12];
