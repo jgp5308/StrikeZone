@@ -53,7 +53,7 @@ const lane = new THREE.Mesh(
 lane.position.set(
   0,
   0,
-  LANE_FRONT_Z - FOUL_LINE_DEPTH_WORLD - LANE_SURFACE_LENGTH_WORLD / 2
+  LANE_FRONT_Z - FOUL_LINE_DEPTH_WORLD / 2 - LANE_SURFACE_LENGTH_WORLD / 2
 );
 lane.receiveShadow = true;
 scene.add(lane);
