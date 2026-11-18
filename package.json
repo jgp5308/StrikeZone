@@ -4,9 +4,23 @@
   "description": "A bowling video game",
   "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
   },
   "keywords": [],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jgp5308/StrikeZone.git"
+  },
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/jgp5308/StrikeZone/issues"
+  },
+  "homepage": "https://github.com/jgp5308/StrikeZone#readme",
+  "dependencies": {
+    "express": "^5.3.0",
+    "three": "^0.187.0"
+  }
 }
