@@ -169,7 +169,7 @@ for (const side of [-1, 1]) {
 
   const gutter = new THREE.Mesh(gutterGeometry, gutterMaterial);
   gutter.scale.set(GUTTER_RADIUS_WORLD, 1, GUTTER_RADIUS_WORLD);
-  gutter.rotation.x = Math.PI / 2;
+  gutter.rotation.x = -Math.PI / 2;
   gutter.position.set(
     gutterX,
     LANE_SURFACE_Y - GUTTER_EDGE_DROP_WORLD,
