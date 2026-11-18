@@ -33,6 +33,7 @@ const LANE_WIDTH_FEET = (BOARD_COUNT * BOARD_WIDTH_INCHES) / 12;
 const LANE_WIDTH = LANE_WIDTH_FEET * WORLD_UNITS_PER_FOOT;
 const BOARD_WIDTH = LANE_WIDTH / BOARD_COUNT;
 const LANE_FRONT_Z = 8;
+const LANE_SURFACE_Y = 0.1;
 const PLAYER_VIEW_HEIGHT_FEET = 4;
 const PLAYER_HEIGHT_WORLD = PLAYER_VIEW_HEIGHT_FEET * WORLD_UNITS_PER_FOOT;
 camera.position.y = PLAYER_HEIGHT_WORLD;
@@ -137,17 +138,28 @@ floor.position.set(0, -0.2, -8);
 floor.receiveShadow = true;
 scene.add(floor);
 
-const gutterMaterial = new THREE.MeshStandardMaterial({ color: 0x111827 });
-const GUTTER_WIDTH_WORLD = 0.16;
+const gutterMaterial = new THREE.MeshStandardMaterial({
+  color: 0x6b7280,
+  roughness: 0.65,
+});
+const GUTTER_WIDTH_INCHES = 9.25;
+const GUTTER_WIDTH_WORLD = (GUTTER_WIDTH_INCHES / 12) * WORLD_UNITS_PER_FOOT;
+const GUTTER_DROP_INCHES = 1.875;
+const GUTTER_DROP_WORLD = (GUTTER_DROP_INCHES / 12) * WORLD_UNITS_PER_FOOT;
+const GUTTER_HEIGHT_WORLD = 0.25;
 for (const x of [
   -(LANE_WIDTH / 2 + GUTTER_WIDTH_WORLD / 2),
   LANE_WIDTH / 2 + GUTTER_WIDTH_WORLD / 2,
 ]) {
   const gutter = new THREE.Mesh(
-    new THREE.BoxGeometry(GUTTER_WIDTH_WORLD, 0.35, LANE_LENGTH_WORLD),
+    new THREE.BoxGeometry(GUTTER_WIDTH_WORLD, GUTTER_HEIGHT_WORLD, LANE_LENGTH_WORLD),
     gutterMaterial
   );
-  gutter.position.set(x, 0, lane.position.z);
+  gutter.position.set(
+    x,
+    LANE_SURFACE_Y - GUTTER_DROP_WORLD - GUTTER_HEIGHT_WORLD / 2,
+    lane.position.z
+  );
   gutter.receiveShadow = true;
   scene.add(gutter);
 }
