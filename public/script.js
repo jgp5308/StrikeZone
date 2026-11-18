@@ -1,4 +1,5 @@
 import * as THREE from "/node_modules/three/build/three.module.js";
+import { LANE_DESIGN } from "/lane-design.js";
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x101827);
@@ -24,30 +25,30 @@ keyLight.position.set(4, 10, 6);
 keyLight.castShadow = true;
 scene.add(keyLight);
 
-const BOARD_COUNT = 39;
-const PIN_FRONT_DISTANCE_FEET = 60;
-const PIN_DECK_BACK_EXTRA_FEET = 3 + 3 / 12;
+const BOARD_COUNT = LANE_DESIGN.boardCount;
+const PIN_FRONT_DISTANCE_FEET = LANE_DESIGN.pinFrontDistanceFeet;
+const PIN_DECK_BACK_EXTRA_FEET = LANE_DESIGN.pinDeckBackExtraFeet;
 const LANE_LENGTH_FEET = PIN_FRONT_DISTANCE_FEET + PIN_DECK_BACK_EXTRA_FEET;
 const LANE_LENGTH_WORLD = LANE_LENGTH_FEET * 0.6;
 const WORLD_UNITS_PER_FOOT = LANE_LENGTH_WORLD / LANE_LENGTH_FEET;
-const BOARD_WIDTH_INCHES = 1.06;
+const BOARD_WIDTH_INCHES = LANE_DESIGN.boardWidthInches;
 const LANE_WIDTH_FEET = (BOARD_COUNT * BOARD_WIDTH_INCHES) / 12;
 const LANE_WIDTH = LANE_WIDTH_FEET * WORLD_UNITS_PER_FOOT;
 const BOARD_WIDTH = LANE_WIDTH / BOARD_COUNT;
 const LANE_FRONT_Z = 8;
 const LANE_SURFACE_Y = 0.1;
-const FOUL_LINE_DEPTH_WORLD = 0.05;
+const FOUL_LINE_DEPTH_WORLD = LANE_DESIGN.foulLineDepthWorld;
 const LANE_SURFACE_LENGTH_WORLD = LANE_LENGTH_WORLD - FOUL_LINE_DEPTH_WORLD;
 const PLAYER_VIEW_HEIGHT_FEET = 4;
 const PLAYER_HEIGHT_WORLD = PLAYER_VIEW_HEIGHT_FEET * WORLD_UNITS_PER_FOOT;
 camera.position.y = PLAYER_HEIGHT_WORLD;
-const PIN_HEIGHT_INCHES = 15;
+const PIN_HEIGHT_INCHES = LANE_DESIGN.pinHeightInches;
 const PIN_REFERENCE_HEIGHT = 1.66;
 const PIN_HEIGHT_WORLD = (PIN_HEIGHT_INCHES / 12) * WORLD_UNITS_PER_FOOT;
 const PIN_FRONT_Z = LANE_FRONT_Z - PIN_FRONT_DISTANCE_FEET * WORLD_UNITS_PER_FOOT;
-const PIN_SPACING_INCHES = 12;
+const PIN_SPACING_INCHES = LANE_DESIGN.pinSpacingInches;
 const PIN_SPACING_WORLD = (PIN_SPACING_INCHES / 12) * WORLD_UNITS_PER_FOOT;
-const BALL_DIAMETER_INCHES = 8.59;
+const BALL_DIAMETER_INCHES = LANE_DESIGN.ballDiameterInches;
 const BALL_DIAMETER_WORLD = (BALL_DIAMETER_INCHES / 12) * WORLD_UNITS_PER_FOOT;
 const BALL_RADIUS_WORLD = BALL_DIAMETER_WORLD / 2;
 
@@ -118,11 +119,12 @@ function addBrownSections(boardNumbers, startFeet) {
   }
 }
 
-addBrownSections([15, 25], 34);
-addBrownSections([10, 30], 40);
+for (const section of LANE_DESIGN.brownSections) {
+  addBrownSections(section.boards, section.startFeet);
+}
 
-const targetBoardNumbers = [5, 10, 15, 20, 25, 30, 35];
-const arrowDistancesFeet = [12, 13 + 1 / 3, 14 + 2 / 3, 16, 14 + 2 / 3, 13 + 1 / 3, 12];
+const targetBoardNumbers = LANE_DESIGN.targetBoardNumbers;
+const arrowDistancesFeet = LANE_DESIGN.arrowDistancesFeet;
 const arrowMaterial = new THREE.MeshStandardMaterial({
   color: 0xf3e5bd,
   roughness: 0.5,
@@ -163,10 +165,10 @@ const gutterMaterial = new THREE.MeshStandardMaterial({
   metalness: 0.15,
   side: THREE.DoubleSide,
 });
-const GUTTER_WIDTH_INCHES = 9.25;
+const GUTTER_WIDTH_INCHES = LANE_DESIGN.gutterWidthInches;
 const GUTTER_WIDTH_WORLD = (GUTTER_WIDTH_INCHES / 12) * WORLD_UNITS_PER_FOOT;
-const GUTTER_START_DROP_INCHES = 0.5;
-const GUTTER_MAX_DROP_INCHES = 3.5;
+const GUTTER_START_DROP_INCHES = LANE_DESIGN.gutterStartDropInches;
+const GUTTER_MAX_DROP_INCHES = LANE_DESIGN.gutterMaxDropInches;
 
 const gutterCrossSectionSegments = 24;
 const gutterLengthSegments = 1;

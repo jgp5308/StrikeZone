@@ -1,0 +1,27 @@
+export const LANE_DESIGN = Object.freeze({
+  boardCount: 39,
+  boardWidthInches: 1.06,
+  pinFrontDistanceFeet: 60,
+  pinDeckBackExtraFeet: 3 + 3 / 12,
+  foulLineDepthWorld: 0.05,
+  pinHeightInches: 15,
+  pinSpacingInches: 12,
+  ballDiameterInches: 8.59,
+  gutterWidthInches: 9.25,
+  gutterStartDropInches: 0.5,
+  gutterMaxDropInches: 3.5,
+  targetBoardNumbers: [5, 10, 15, 20, 25, 30, 35],
+  arrowDistancesFeet: [
+    12,
+    13 + 1 / 3,
+    14 + 2 / 3,
+    16,
+    14 + 2 / 3,
+    13 + 1 / 3,
+    12,
+  ],
+  brownSections: [
+    { boards: [15, 25], startFeet: 34 },
+    { boards: [10, 30], startFeet: 40 },
+  ],
+});
