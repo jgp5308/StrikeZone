@@ -34,6 +34,8 @@ const LANE_WIDTH = LANE_WIDTH_FEET * WORLD_UNITS_PER_FOOT;
 const BOARD_WIDTH = LANE_WIDTH / BOARD_COUNT;
 const LANE_FRONT_Z = 8;
 const LANE_SURFACE_Y = 0.1;
+const FOUL_LINE_DEPTH_WORLD = 0.05;
+const LANE_SURFACE_LENGTH_WORLD = LANE_LENGTH_WORLD - FOUL_LINE_DEPTH_WORLD;
 const PLAYER_VIEW_HEIGHT_FEET = 4;
 const PLAYER_HEIGHT_WORLD = PLAYER_VIEW_HEIGHT_FEET * WORLD_UNITS_PER_FOOT;
 camera.position.y = PLAYER_HEIGHT_WORLD;
@@ -45,15 +47,19 @@ const BALL_DIAMETER_WORLD = (BALL_DIAMETER_INCHES / 12) * WORLD_UNITS_PER_FOOT;
 const BALL_RADIUS_WORLD = BALL_DIAMETER_WORLD / 2;
 
 const lane = new THREE.Mesh(
-  new THREE.BoxGeometry(LANE_WIDTH, 0.2, LANE_LENGTH_WORLD),
+  new THREE.BoxGeometry(LANE_WIDTH, 0.2, LANE_SURFACE_LENGTH_WORLD),
   new THREE.MeshStandardMaterial({ color: 0xc68b52, roughness: 0.45 })
 );
-lane.position.set(0, 0, LANE_FRONT_Z - LANE_LENGTH_WORLD / 2);
+lane.position.set(
+  0,
+  0,
+  LANE_FRONT_Z - FOUL_LINE_DEPTH_WORLD - LANE_SURFACE_LENGTH_WORLD / 2
+);
 lane.receiveShadow = true;
 scene.add(lane);
 
 const foulLine = new THREE.Mesh(
-  new THREE.BoxGeometry(LANE_WIDTH + 0.02, 0.004, 0.05),
+  new THREE.BoxGeometry(LANE_WIDTH + 0.02, 0.004, FOUL_LINE_DEPTH_WORLD),
   new THREE.MeshStandardMaterial({ color: 0x050505, roughness: 0.35 })
 );
 foulLine.position.set(0, LANE_SURFACE_Y - 0.002, LANE_FRONT_Z);
@@ -67,7 +73,7 @@ const boardLineMaterial = new THREE.MeshStandardMaterial({
 
 for (let boardBoundary = 1; boardBoundary < BOARD_COUNT; boardBoundary += 1) {
   const boardLine = new THREE.Mesh(
-    new THREE.BoxGeometry(0.012, 0.012, 35.8),
+    new THREE.BoxGeometry(0.012, 0.012, LANE_SURFACE_LENGTH_WORLD),
     boardLineMaterial
   );
   boardLine.position.set(
