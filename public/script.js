@@ -52,6 +52,14 @@ lane.position.set(0, 0, LANE_FRONT_Z - LANE_LENGTH_WORLD / 2);
 lane.receiveShadow = true;
 scene.add(lane);
 
+const foulLine = new THREE.Mesh(
+  new THREE.BoxGeometry(LANE_WIDTH, 0.02, 0.05),
+  new THREE.MeshStandardMaterial({ color: 0x050505, roughness: 0.35 })
+);
+foulLine.position.set(0, LANE_SURFACE_Y + 0.01, LANE_FRONT_Z);
+foulLine.receiveShadow = true;
+scene.add(foulLine);
+
 const boardLineMaterial = new THREE.MeshStandardMaterial({
   color: 0x9b673d,
   roughness: 0.8,
