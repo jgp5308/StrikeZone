@@ -164,9 +164,9 @@ for (const side of [-1, 1]) {
     0,
     Math.PI
   );
-  gutterGeometry.scale.set(GUTTER_WIDTH_WORLD / 2, 1, GUTTER_DROP_WORLD);
 
   const gutter = new THREE.Mesh(gutterGeometry, gutterMaterial);
+  gutter.scale.set(GUTTER_WIDTH_WORLD / 2, 1, GUTTER_DROP_WORLD);
   gutter.rotation.x = Math.PI / 2;
   gutter.position.set(gutterX, LANE_SURFACE_Y, lane.position.z);
   gutter.receiveShadow = true;
