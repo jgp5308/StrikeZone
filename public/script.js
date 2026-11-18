@@ -25,11 +25,13 @@ keyLight.castShadow = true;
 scene.add(keyLight);
 
 const BOARD_COUNT = 39;
-const LANE_WIDTH = 4;
-const BOARD_WIDTH = LANE_WIDTH / BOARD_COUNT;
 const LANE_LENGTH_FEET = 60;
 const LANE_LENGTH_WORLD = 36;
 const WORLD_UNITS_PER_FOOT = LANE_LENGTH_WORLD / LANE_LENGTH_FEET;
+const BOARD_WIDTH_INCHES = 1.06;
+const LANE_WIDTH_FEET = (BOARD_COUNT * BOARD_WIDTH_INCHES) / 12;
+const LANE_WIDTH = LANE_WIDTH_FEET * WORLD_UNITS_PER_FOOT;
+const BOARD_WIDTH = LANE_WIDTH / BOARD_COUNT;
 const LANE_FRONT_Z = 8;
 const PIN_HEIGHT_INCHES = 15;
 const PIN_REFERENCE_HEIGHT = 1.66;
@@ -130,8 +132,15 @@ floor.receiveShadow = true;
 scene.add(floor);
 
 const gutterMaterial = new THREE.MeshStandardMaterial({ color: 0x111827 });
-for (const x of [-(LANE_WIDTH / 2 + 0.225), LANE_WIDTH / 2 + 0.225]) {
-  const gutter = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.35, 36), gutterMaterial);
+const GUTTER_WIDTH_WORLD = 0.16;
+for (const x of [
+  -(LANE_WIDTH / 2 + GUTTER_WIDTH_WORLD / 2),
+  LANE_WIDTH / 2 + GUTTER_WIDTH_WORLD / 2,
+]) {
+  const gutter = new THREE.Mesh(
+    new THREE.BoxGeometry(GUTTER_WIDTH_WORLD, 0.35, LANE_LENGTH_WORLD),
+    gutterMaterial
+  );
   gutter.position.set(x, 0, lane.position.z);
   gutter.receiveShadow = true;
   scene.add(gutter);
@@ -169,6 +178,7 @@ function createPin(x, z) {
   });
 
   for (const stripe of [
+    { radius: 0.12, y: 1.0 },
     { radius: 0.13, y: 1.1 },
     { radius: 0.15, y: 1.2 },
   ]) {
