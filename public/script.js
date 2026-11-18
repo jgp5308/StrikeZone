@@ -199,6 +199,19 @@ scene.add(ball);
 let yaw = 0;
 let pitch = -0.08;
 let isLooking = false;
+const pressedKeys = new Set();
+const movementSpeed = 5;
+
+window.addEventListener("keydown", (event) => {
+  const key = event.key.toLowerCase();
+  if (!["w", "a", "s", "d"].includes(key)) return;
+  event.preventDefault();
+  pressedKeys.add(key);
+});
+
+window.addEventListener("keyup", (event) => {
+  pressedKeys.delete(event.key.toLowerCase());
+});
 
 renderer.domElement.addEventListener("click", () => {
   renderer.domElement.requestPointerLock();
@@ -223,8 +236,32 @@ function resize() {
 
 window.addEventListener("resize", resize);
 
-function animate() {
+function updateMovement(deltaSeconds) {
+  const forward = new THREE.Vector3(-Math.sin(yaw), 0, -Math.cos(yaw));
+  const right = new THREE.Vector3(Math.cos(yaw), 0, -Math.sin(yaw));
+  const movement = new THREE.Vector3();
+
+  if (pressedKeys.has("w")) movement.add(forward);
+  if (pressedKeys.has("s")) movement.sub(forward);
+  if (pressedKeys.has("d")) movement.add(right);
+  if (pressedKeys.has("a")) movement.sub(right);
+
+  if (movement.lengthSq() > 0) {
+    movement.normalize().multiplyScalar(movementSpeed * deltaSeconds);
+    camera.position.add(movement);
+  }
+
+  camera.position.x = THREE.MathUtils.clamp(camera.position.x, -6, 6);
+  camera.position.z = THREE.MathUtils.clamp(camera.position.z, -27, 7.5);
+}
+
+let lastFrameTime = 0;
+
+function animate(currentTime = 0) {
   requestAnimationFrame(animate);
+  const deltaSeconds = Math.min((currentTime - lastFrameTime) / 1000, 0.05);
+  lastFrameTime = currentTime;
+  updateMovement(deltaSeconds);
   camera.rotation.set(pitch, yaw, 0, "YXZ");
   renderer.render(scene, camera);
 }
