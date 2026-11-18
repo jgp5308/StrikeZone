@@ -165,7 +165,7 @@ const leftGutterGeometry = new THREE.CylinderGeometry(
 );
 const leftGutter = new THREE.Mesh(leftGutterGeometry, gutterMaterial);
 leftGutter.scale.set(GUTTER_WIDTH_WORLD / 2, 1, GUTTER_VERTICAL_RANGE_WORLD);
-leftGutter.rotation.x = -Math.PI / 2;
+leftGutter.rotation.x = Math.PI / 2;
 leftGutter.position.set(
   -LANE_WIDTH / 2 - GUTTER_WIDTH_WORLD / 2,
   LANE_SURFACE_Y - GUTTER_START_DROP_WORLD,
