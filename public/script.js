@@ -25,8 +25,10 @@ keyLight.castShadow = true;
 scene.add(keyLight);
 
 const BOARD_COUNT = 39;
-const LANE_LENGTH_FEET = 60;
-const LANE_LENGTH_WORLD = 36;
+const PIN_FRONT_DISTANCE_FEET = 60;
+const PIN_DECK_BACK_EXTRA_FEET = 2 + 10 / 12;
+const LANE_LENGTH_FEET = PIN_FRONT_DISTANCE_FEET + PIN_DECK_BACK_EXTRA_FEET;
+const LANE_LENGTH_WORLD = LANE_LENGTH_FEET * 0.6;
 const WORLD_UNITS_PER_FOOT = LANE_LENGTH_WORLD / LANE_LENGTH_FEET;
 const BOARD_WIDTH_INCHES = 1.06;
 const LANE_WIDTH_FEET = (BOARD_COUNT * BOARD_WIDTH_INCHES) / 12;
@@ -42,6 +44,7 @@ camera.position.y = PLAYER_HEIGHT_WORLD;
 const PIN_HEIGHT_INCHES = 15;
 const PIN_REFERENCE_HEIGHT = 1.66;
 const PIN_HEIGHT_WORLD = (PIN_HEIGHT_INCHES / 12) * WORLD_UNITS_PER_FOOT;
+const PIN_FRONT_Z = LANE_FRONT_Z - PIN_FRONT_DISTANCE_FEET * WORLD_UNITS_PER_FOOT;
 const BALL_DIAMETER_INCHES = 8.59;
 const BALL_DIAMETER_WORLD = (BALL_DIAMETER_INCHES / 12) * WORLD_UNITS_PER_FOOT;
 const BALL_RADIUS_WORLD = BALL_DIAMETER_WORLD / 2;
@@ -274,7 +277,7 @@ function createPin(x, z) {
 
 for (let row = 0; row < 4; row += 1) {
   for (let column = 0; column <= row; column += 1) {
-    createPin((column - row / 2) * 0.55, -24 - row * 0.6);
+    createPin((column - row / 2) * 0.55, PIN_FRONT_Z - row * 0.6);
   }
 }
 
