@@ -273,7 +273,7 @@ function createPin(x, z) {
   }
 
   pin.scale.setScalar(PIN_HEIGHT_WORLD / PIN_REFERENCE_HEIGHT);
-  pin.position.set(x, 0, z);
+  pin.position.set(x, LANE_SURFACE_Y, z);
   scene.add(pin);
 }
 
