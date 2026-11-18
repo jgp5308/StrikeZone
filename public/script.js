@@ -71,7 +71,7 @@ const brownSectionLengthFeet = 3;
 const brownSectionCenterZ =
   LANE_FRONT_Z - (brownSectionStartFeet + brownSectionLengthFeet / 2) * WORLD_UNITS_PER_FOOT;
 
-for (const boardNumber of [10, 30]) {
+for (const boardNumber of [15, 25]) {
   const brownSection = new THREE.Mesh(
     new THREE.BoxGeometry(
       BOARD_WIDTH * 0.96,
