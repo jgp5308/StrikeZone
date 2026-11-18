@@ -142,35 +142,55 @@ const gutterMaterial = new THREE.MeshStandardMaterial({
   color: 0x050505,
   roughness: 0.2,
   metalness: 0.15,
+  side: THREE.DoubleSide,
 });
 const GUTTER_WIDTH_INCHES = 9.25;
 const GUTTER_WIDTH_WORLD = (GUTTER_WIDTH_INCHES / 12) * WORLD_UNITS_PER_FOOT;
 const GUTTER_START_DROP_INCHES = 0.5;
 const GUTTER_MAX_DROP_INCHES = 3.5;
-const GUTTER_VERTICAL_RANGE_WORLD =
-  ((GUTTER_MAX_DROP_INCHES - GUTTER_START_DROP_INCHES) / 12) *
-  WORLD_UNITS_PER_FOOT;
-const GUTTER_START_DROP_WORLD =
-  (GUTTER_START_DROP_INCHES / 12) * WORLD_UNITS_PER_FOOT;
 
-const leftGutterGeometry = new THREE.CylinderGeometry(
-  1,
-  1,
-  LANE_LENGTH_WORLD,
-  32,
-  1,
-  true,
-  0,
-  Math.PI
+const gutterCrossSectionSegments = 24;
+const gutterLengthSegments = 1;
+const gutterPositions = [];
+const gutterIndices = [];
+const gutterInnerEdgeX = -LANE_WIDTH / 2;
+
+for (let lengthIndex = 0; lengthIndex <= gutterLengthSegments; lengthIndex += 1) {
+  const z =
+    lane.position.z - LANE_LENGTH_WORLD / 2 +
+    (lengthIndex / gutterLengthSegments) * LANE_LENGTH_WORLD;
+
+  for (let crossSectionIndex = 0; crossSectionIndex <= gutterCrossSectionSegments; crossSectionIndex += 1) {
+    const across = crossSectionIndex / gutterCrossSectionSegments;
+    const depthInches =
+      GUTTER_START_DROP_INCHES +
+      (GUTTER_MAX_DROP_INCHES - GUTTER_START_DROP_INCHES) *
+        Math.sin(Math.PI * across);
+    const x = gutterInnerEdgeX - across * GUTTER_WIDTH_WORLD;
+    const y = LANE_SURFACE_Y - (depthInches / 12) * WORLD_UNITS_PER_FOOT;
+    gutterPositions.push(x, y, z);
+  }
+}
+
+for (let lengthIndex = 0; lengthIndex < gutterLengthSegments; lengthIndex += 1) {
+  for (let crossSectionIndex = 0; crossSectionIndex < gutterCrossSectionSegments; crossSectionIndex += 1) {
+    const current =
+      lengthIndex * (gutterCrossSectionSegments + 1) + crossSectionIndex;
+    const nextRow = current + gutterCrossSectionSegments + 1;
+    gutterIndices.push(current, nextRow, current + 1);
+    gutterIndices.push(current + 1, nextRow, nextRow + 1);
+  }
+}
+
+const leftGutterGeometry = new THREE.BufferGeometry();
+leftGutterGeometry.setAttribute(
+  "position",
+  new THREE.Float32BufferAttribute(gutterPositions, 3)
 );
+leftGutterGeometry.setIndex(gutterIndices);
+leftGutterGeometry.computeVertexNormals();
+
 const leftGutter = new THREE.Mesh(leftGutterGeometry, gutterMaterial);
-leftGutter.scale.set(GUTTER_WIDTH_WORLD / 2, 1, GUTTER_VERTICAL_RANGE_WORLD);
-leftGutter.rotation.x = Math.PI / 2;
-leftGutter.position.set(
-  -LANE_WIDTH / 2 - GUTTER_WIDTH_WORLD / 2,
-  LANE_SURFACE_Y - GUTTER_START_DROP_WORLD,
-  lane.position.z
-);
 leftGutter.receiveShadow = true;
 scene.add(leftGutter);
 
