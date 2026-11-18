@@ -24,13 +24,74 @@ keyLight.position.set(4, 10, 6);
 keyLight.castShadow = true;
 scene.add(keyLight);
 
+const BOARD_COUNT = 39;
+const LANE_WIDTH = 4;
+const BOARD_WIDTH = LANE_WIDTH / BOARD_COUNT;
+
 const lane = new THREE.Mesh(
-  new THREE.BoxGeometry(4, 0.2, 36),
+  new THREE.BoxGeometry(LANE_WIDTH, 0.2, 36),
   new THREE.MeshStandardMaterial({ color: 0xc68b52, roughness: 0.45 })
 );
 lane.position.set(0, 0, -10);
 lane.receiveShadow = true;
 scene.add(lane);
+
+const boardLineMaterial = new THREE.MeshStandardMaterial({
+  color: 0x9b673d,
+  roughness: 0.8,
+});
+
+for (let boardBoundary = 1; boardBoundary < BOARD_COUNT; boardBoundary += 1) {
+  const boardLine = new THREE.Mesh(
+    new THREE.BoxGeometry(0.012, 0.012, 35.8),
+    boardLineMaterial
+  );
+  boardLine.position.set(
+    -LANE_WIDTH / 2 + boardBoundary * BOARD_WIDTH,
+    0.108,
+    -10
+  );
+  scene.add(boardLine);
+}
+
+function boardCenter(boardNumber) {
+  return (boardNumber - (BOARD_COUNT + 1) / 2) * BOARD_WIDTH;
+}
+
+const targetBoardNumbers = [5, 10, 15, 20, 25, 30, 35];
+const arrowMaterial = new THREE.MeshStandardMaterial({
+  color: 0xf3e5bd,
+  roughness: 0.5,
+  side: THREE.DoubleSide,
+});
+
+function addTargetArrow(boardNumber) {
+  const arrowShape = new THREE.Shape();
+  arrowShape.moveTo(-0.14, 0.16);
+  arrowShape.lineTo(0.14, 0.16);
+  arrowShape.lineTo(0, -0.2);
+  arrowShape.closePath();
+
+  const arrow = new THREE.Mesh(new THREE.ShapeGeometry(arrowShape), arrowMaterial);
+  arrow.rotation.x = -Math.PI / 2;
+  arrow.position.set(boardCenter(boardNumber), 0.12, -8.5);
+  scene.add(arrow);
+}
+
+function addApproachDot(boardNumber) {
+  const dot = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.055, 0.055, 0.018, 20),
+    arrowMaterial
+  );
+  dot.position.set(boardCenter(boardNumber), 0.12, 5.9);
+  dot.rotation.x = Math.PI / 2;
+  scene.add(dot);
+}
+
+for (const boardNumber of targetBoardNumbers) {
+  addTargetArrow(boardNumber);
+  addApproachDot(boardNumber);
+}
 
 const floor = new THREE.Mesh(
   new THREE.BoxGeometry(30, 0.2, 50),
@@ -41,7 +102,7 @@ floor.receiveShadow = true;
 scene.add(floor);
 
 const gutterMaterial = new THREE.MeshStandardMaterial({ color: 0x111827 });
-for (const x of [-2.35, 2.35]) {
+for (const x of [-(LANE_WIDTH / 2 + 0.225), LANE_WIDTH / 2 + 0.225]) {
   const gutter = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.35, 36), gutterMaterial);
   gutter.position.set(x, 0, -10);
   gutter.receiveShadow = true;
