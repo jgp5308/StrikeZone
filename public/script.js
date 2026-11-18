@@ -9,7 +9,7 @@ const camera = new THREE.PerspectiveCamera(
   0.1,
   200
 );
-camera.position.set(0, 2.1, 8);
+camera.position.set(0, 0, 8);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -33,6 +33,9 @@ const LANE_WIDTH_FEET = (BOARD_COUNT * BOARD_WIDTH_INCHES) / 12;
 const LANE_WIDTH = LANE_WIDTH_FEET * WORLD_UNITS_PER_FOOT;
 const BOARD_WIDTH = LANE_WIDTH / BOARD_COUNT;
 const LANE_FRONT_Z = 8;
+const PLAYER_HEIGHT_FEET = 5 + 10 / 12;
+const PLAYER_HEIGHT_WORLD = PLAYER_HEIGHT_FEET * WORLD_UNITS_PER_FOOT;
+camera.position.y = PLAYER_HEIGHT_WORLD;
 const PIN_HEIGHT_INCHES = 15;
 const PIN_REFERENCE_HEIGHT = 1.66;
 const PIN_HEIGHT_WORLD = (PIN_HEIGHT_INCHES / 12) * WORLD_UNITS_PER_FOOT;
