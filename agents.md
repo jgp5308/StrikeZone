@@ -12,3 +12,10 @@ StrikeZone is a bowling video game. Keep the player experience focused on fun, r
 ## Getting Started
 
 Add project-specific guidance here as we build the game.
+
+## Project Structure and Conventions
+
+- The server entry point is `server.js` in the repository root. Static files are in `public`.
+- The front end uses plain HTML, CSS, and JavaScript without frameworks.
+- Read keys and passwords from environment variables. Never write secrets in the code, and never commit the `.env` file.
+- End each task with a Git commit and push.
