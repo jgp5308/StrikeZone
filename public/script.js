@@ -139,29 +139,50 @@ floor.receiveShadow = true;
 scene.add(floor);
 
 const gutterMaterial = new THREE.MeshStandardMaterial({
-  color: 0x6b7280,
-  roughness: 0.65,
+  color: 0x050505,
+  roughness: 0.2,
+  metalness: 0.15,
+});
+const gutterLipMaterial = new THREE.MeshStandardMaterial({
+  color: 0x303030,
+  roughness: 0.3,
+  metalness: 0.2,
 });
 const GUTTER_WIDTH_INCHES = 9.25;
 const GUTTER_WIDTH_WORLD = (GUTTER_WIDTH_INCHES / 12) * WORLD_UNITS_PER_FOOT;
 const GUTTER_DROP_INCHES = 1.875;
 const GUTTER_DROP_WORLD = (GUTTER_DROP_INCHES / 12) * WORLD_UNITS_PER_FOOT;
-const GUTTER_HEIGHT_WORLD = 0.25;
-for (const x of [
-  -(LANE_WIDTH / 2 + GUTTER_WIDTH_WORLD / 2),
-  LANE_WIDTH / 2 + GUTTER_WIDTH_WORLD / 2,
-]) {
-  const gutter = new THREE.Mesh(
-    new THREE.BoxGeometry(GUTTER_WIDTH_WORLD, GUTTER_HEIGHT_WORLD, LANE_LENGTH_WORLD),
-    gutterMaterial
+for (const side of [-1, 1]) {
+  const gutterX = side * (LANE_WIDTH / 2 + GUTTER_WIDTH_WORLD / 2);
+  const gutterGeometry = new THREE.CylinderGeometry(
+    1,
+    1,
+    LANE_LENGTH_WORLD,
+    32,
+    1,
+    true,
+    0,
+    Math.PI
   );
-  gutter.position.set(
-    x,
-    LANE_SURFACE_Y - GUTTER_DROP_WORLD - GUTTER_HEIGHT_WORLD / 2,
-    lane.position.z
-  );
+  gutterGeometry.scale.set(GUTTER_WIDTH_WORLD / 2, 1, GUTTER_DROP_WORLD);
+
+  const gutter = new THREE.Mesh(gutterGeometry, gutterMaterial);
+  gutter.rotation.x = Math.PI / 2;
+  gutter.position.set(gutterX, LANE_SURFACE_Y, lane.position.z);
   gutter.receiveShadow = true;
   scene.add(gutter);
+
+  const gutterLip = new THREE.Mesh(
+    new THREE.BoxGeometry(0.035, 0.025, LANE_LENGTH_WORLD),
+    gutterLipMaterial
+  );
+  gutterLip.position.set(
+    side * (LANE_WIDTH / 2 + GUTTER_WIDTH_WORLD),
+    LANE_SURFACE_Y + 0.01,
+    lane.position.z
+  );
+  gutterLip.receiveShadow = true;
+  scene.add(gutterLip);
 }
 
 function createPin(x, z) {
