@@ -27,12 +27,16 @@ scene.add(keyLight);
 const BOARD_COUNT = 39;
 const LANE_WIDTH = 4;
 const BOARD_WIDTH = LANE_WIDTH / BOARD_COUNT;
+const LANE_LENGTH_FEET = 60;
+const LANE_LENGTH_WORLD = 36;
+const WORLD_UNITS_PER_FOOT = LANE_LENGTH_WORLD / LANE_LENGTH_FEET;
+const LANE_FRONT_Z = 8;
 
 const lane = new THREE.Mesh(
-  new THREE.BoxGeometry(LANE_WIDTH, 0.2, 36),
+  new THREE.BoxGeometry(LANE_WIDTH, 0.2, LANE_LENGTH_WORLD),
   new THREE.MeshStandardMaterial({ color: 0xc68b52, roughness: 0.45 })
 );
-lane.position.set(0, 0, -10);
+lane.position.set(0, 0, LANE_FRONT_Z - LANE_LENGTH_WORLD / 2);
 lane.receiveShadow = true;
 scene.add(lane);
 
@@ -49,7 +53,7 @@ for (let boardBoundary = 1; boardBoundary < BOARD_COUNT; boardBoundary += 1) {
   boardLine.position.set(
     -LANE_WIDTH / 2 + boardBoundary * BOARD_WIDTH,
     0.108,
-    -10
+    lane.position.z
   );
   scene.add(boardLine);
 }
@@ -59,13 +63,14 @@ function boardCenter(boardNumber) {
 }
 
 const targetBoardNumbers = [5, 10, 15, 20, 25, 30, 35];
+const arrowDistancesFeet = [12, 13 + 1 / 3, 14 + 2 / 3, 16, 14 + 2 / 3, 13 + 1 / 3, 12];
 const arrowMaterial = new THREE.MeshStandardMaterial({
   color: 0xf3e5bd,
   roughness: 0.5,
   side: THREE.DoubleSide,
 });
 
-function addTargetArrow(boardNumber) {
+function addTargetArrow(boardNumber, distanceFeet) {
   const arrowShape = new THREE.Shape();
   arrowShape.moveTo(-0.14, 0.16);
   arrowShape.lineTo(0.14, 0.16);
@@ -74,23 +79,15 @@ function addTargetArrow(boardNumber) {
 
   const arrow = new THREE.Mesh(new THREE.ShapeGeometry(arrowShape), arrowMaterial);
   arrow.rotation.x = -Math.PI / 2;
-  arrow.position.set(boardCenter(boardNumber), 0.12, -8.5);
+  arrow.position.set(
+    boardCenter(boardNumber),
+    0.12,
+    LANE_FRONT_Z - distanceFeet * WORLD_UNITS_PER_FOOT
+  );
   scene.add(arrow);
 }
-
-function addApproachDot(boardNumber) {
-  const dot = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.055, 0.055, 0.018, 20),
-    arrowMaterial
-  );
-  dot.position.set(boardCenter(boardNumber), 0.12, 5.9);
-  dot.rotation.x = Math.PI / 2;
-  scene.add(dot);
-}
-
-for (const boardNumber of targetBoardNumbers) {
-  addTargetArrow(boardNumber);
-  addApproachDot(boardNumber);
+for (let arrowIndex = 0; arrowIndex < targetBoardNumbers.length; arrowIndex += 1) {
+  addTargetArrow(targetBoardNumbers[arrowIndex], arrowDistancesFeet[arrowIndex]);
 }
 
 const floor = new THREE.Mesh(
@@ -104,7 +101,7 @@ scene.add(floor);
 const gutterMaterial = new THREE.MeshStandardMaterial({ color: 0x111827 });
 for (const x of [-(LANE_WIDTH / 2 + 0.225), LANE_WIDTH / 2 + 0.225]) {
   const gutter = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.35, 36), gutterMaterial);
-  gutter.position.set(x, 0, -10);
+  gutter.position.set(x, 0, lane.position.z);
   gutter.receiveShadow = true;
   scene.add(gutter);
 }
