@@ -62,6 +62,29 @@ function boardCenter(boardNumber) {
   return (boardNumber - (BOARD_COUNT + 1) / 2) * BOARD_WIDTH;
 }
 
+const darkBrownMaterial = new THREE.MeshStandardMaterial({
+  color: 0x4b2618,
+  roughness: 0.75,
+});
+const brownSectionStartFeet = 34;
+const brownSectionLengthFeet = 3;
+const brownSectionCenterZ =
+  LANE_FRONT_Z - (brownSectionStartFeet + brownSectionLengthFeet / 2) * WORLD_UNITS_PER_FOOT;
+
+for (const boardNumber of [10, 30]) {
+  const brownSection = new THREE.Mesh(
+    new THREE.BoxGeometry(
+      BOARD_WIDTH * 0.96,
+      0.018,
+      brownSectionLengthFeet * WORLD_UNITS_PER_FOOT
+    ),
+    darkBrownMaterial
+  );
+  brownSection.position.set(boardCenter(boardNumber), 0.12, brownSectionCenterZ);
+  brownSection.receiveShadow = true;
+  scene.add(brownSection);
+}
+
 const targetBoardNumbers = [5, 10, 15, 20, 25, 30, 35];
 const arrowDistancesFeet = [12, 13 + 1 / 3, 14 + 2 / 3, 16, 14 + 2 / 3, 13 + 1 / 3, 12];
 const arrowMaterial = new THREE.MeshStandardMaterial({
