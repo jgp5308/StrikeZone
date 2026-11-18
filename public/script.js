@@ -53,10 +53,10 @@ lane.receiveShadow = true;
 scene.add(lane);
 
 const foulLine = new THREE.Mesh(
-  new THREE.BoxGeometry(LANE_WIDTH, 0.02, 0.05),
+  new THREE.BoxGeometry(LANE_WIDTH + 0.02, 0.004, 0.05),
   new THREE.MeshStandardMaterial({ color: 0x050505, roughness: 0.35 })
 );
-foulLine.position.set(0, LANE_SURFACE_Y + 0.01, LANE_FRONT_Z);
+foulLine.position.set(0, LANE_SURFACE_Y - 0.002, LANE_FRONT_Z);
 foulLine.receiveShadow = true;
 scene.add(foulLine);
 
