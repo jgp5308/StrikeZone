@@ -151,48 +151,61 @@ const GUTTER_MAX_DROP_INCHES = 3.5;
 
 const gutterCrossSectionSegments = 24;
 const gutterLengthSegments = 1;
-const gutterPositions = [];
-const gutterIndices = [];
-const gutterInnerEdgeX = -LANE_WIDTH / 2;
+function createGutter(side) {
+  const gutterPositions = [];
+  const gutterIndices = [];
+  const gutterInnerEdgeX = side * (LANE_WIDTH / 2);
 
-for (let lengthIndex = 0; lengthIndex <= gutterLengthSegments; lengthIndex += 1) {
-  const z =
-    lane.position.z - LANE_LENGTH_WORLD / 2 +
-    (lengthIndex / gutterLengthSegments) * LANE_LENGTH_WORLD;
+  for (let lengthIndex = 0; lengthIndex <= gutterLengthSegments; lengthIndex += 1) {
+    const z =
+      lane.position.z - LANE_LENGTH_WORLD / 2 +
+      (lengthIndex / gutterLengthSegments) * LANE_LENGTH_WORLD;
 
-  for (let crossSectionIndex = 0; crossSectionIndex <= gutterCrossSectionSegments; crossSectionIndex += 1) {
-    const across = crossSectionIndex / gutterCrossSectionSegments;
-    const depthInches =
-      GUTTER_START_DROP_INCHES +
-      (GUTTER_MAX_DROP_INCHES - GUTTER_START_DROP_INCHES) *
-        Math.sin(Math.PI * across);
-    const x = gutterInnerEdgeX - across * GUTTER_WIDTH_WORLD;
-    const y = LANE_SURFACE_Y - (depthInches / 12) * WORLD_UNITS_PER_FOOT;
-    gutterPositions.push(x, y, z);
+    for (
+      let crossSectionIndex = 0;
+      crossSectionIndex <= gutterCrossSectionSegments;
+      crossSectionIndex += 1
+    ) {
+      const across = crossSectionIndex / gutterCrossSectionSegments;
+      const depthInches =
+        GUTTER_START_DROP_INCHES +
+        (GUTTER_MAX_DROP_INCHES - GUTTER_START_DROP_INCHES) *
+          Math.sin(Math.PI * across);
+      const x = gutterInnerEdgeX + side * across * GUTTER_WIDTH_WORLD;
+      const y = LANE_SURFACE_Y - (depthInches / 12) * WORLD_UNITS_PER_FOOT;
+      gutterPositions.push(x, y, z);
+    }
   }
+
+  for (let lengthIndex = 0; lengthIndex < gutterLengthSegments; lengthIndex += 1) {
+    for (
+      let crossSectionIndex = 0;
+      crossSectionIndex < gutterCrossSectionSegments;
+      crossSectionIndex += 1
+    ) {
+      const current =
+        lengthIndex * (gutterCrossSectionSegments + 1) + crossSectionIndex;
+      const nextRow = current + gutterCrossSectionSegments + 1;
+      gutterIndices.push(current, nextRow, current + 1);
+      gutterIndices.push(current + 1, nextRow, nextRow + 1);
+    }
+  }
+
+  const gutterGeometry = new THREE.BufferGeometry();
+  gutterGeometry.setAttribute(
+    "position",
+    new THREE.Float32BufferAttribute(gutterPositions, 3)
+  );
+  gutterGeometry.setIndex(gutterIndices);
+  gutterGeometry.computeVertexNormals();
+
+  const gutter = new THREE.Mesh(gutterGeometry, gutterMaterial);
+  gutter.receiveShadow = true;
+  scene.add(gutter);
 }
 
-for (let lengthIndex = 0; lengthIndex < gutterLengthSegments; lengthIndex += 1) {
-  for (let crossSectionIndex = 0; crossSectionIndex < gutterCrossSectionSegments; crossSectionIndex += 1) {
-    const current =
-      lengthIndex * (gutterCrossSectionSegments + 1) + crossSectionIndex;
-    const nextRow = current + gutterCrossSectionSegments + 1;
-    gutterIndices.push(current, nextRow, current + 1);
-    gutterIndices.push(current + 1, nextRow, nextRow + 1);
-  }
-}
-
-const leftGutterGeometry = new THREE.BufferGeometry();
-leftGutterGeometry.setAttribute(
-  "position",
-  new THREE.Float32BufferAttribute(gutterPositions, 3)
-);
-leftGutterGeometry.setIndex(gutterIndices);
-leftGutterGeometry.computeVertexNormals();
-
-const leftGutter = new THREE.Mesh(leftGutterGeometry, gutterMaterial);
-leftGutter.receiveShadow = true;
-scene.add(leftGutter);
+createGutter(-1);
+createGutter(1);
 
 function createPin(x, z) {
   const pin = new THREE.Group();
