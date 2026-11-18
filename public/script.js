@@ -72,9 +72,9 @@ const arrowMaterial = new THREE.MeshStandardMaterial({
 
 function addTargetArrow(boardNumber, distanceFeet) {
   const arrowShape = new THREE.Shape();
-  arrowShape.moveTo(-0.14, 0.16);
-  arrowShape.lineTo(0.14, 0.16);
-  arrowShape.lineTo(0, -0.2);
+  arrowShape.moveTo(-0.1, -0.16);
+  arrowShape.lineTo(0.1, -0.16);
+  arrowShape.lineTo(0, 0.2);
   arrowShape.closePath();
 
   const arrow = new THREE.Mesh(new THREE.ShapeGeometry(arrowShape), arrowMaterial);
