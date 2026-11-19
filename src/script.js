@@ -433,6 +433,32 @@ const rollStatus = document.querySelector("#roll-status");
 const aimControls = document.querySelector("#aim-controls");
 const oilToggle = document.querySelector("#oil-toggle input");
 const patternSelect = document.querySelector("#pattern-select");
+const ballSpeedInput = document.querySelector("#ball-speed");
+const revRateInput = document.querySelector("#rev-rate");
+const axisRotationInput = document.querySelector("#axis-rotation");
+const ballSpeedValue = document.querySelector("#ball-speed-value");
+const revRateValue = document.querySelector("#rev-rate-value");
+const axisRotationValue = document.querySelector("#axis-rotation-value");
+
+const ballSettings = {
+  speedMph: Number(ballSpeedInput.value),
+  revRateRpm: Number(revRateInput.value),
+  axisRotationDegrees: Number(axisRotationInput.value),
+};
+
+function updateBallSettings() {
+  ballSettings.speedMph = Number(ballSpeedInput.value);
+  ballSettings.revRateRpm = Number(revRateInput.value);
+  ballSettings.axisRotationDegrees = Number(axisRotationInput.value);
+  ballSpeedValue.textContent = `${ballSettings.speedMph} MPH`;
+  revRateValue.textContent = `${ballSettings.revRateRpm} RPM`;
+  axisRotationValue.textContent = `${ballSettings.axisRotationDegrees}°`;
+}
+
+for (const input of [ballSpeedInput, revRateInput, axisRotationInput]) {
+  input.addEventListener("input", updateBallSettings);
+}
+updateBallSettings();
 
 function updateOilVisualization() {
   const lightBlue = new THREE.Color(0xb9efff);
@@ -462,6 +488,7 @@ let ballInPlay = false;
 let resetTimer = 0;
 let rollElapsed = 0;
 let hookDirection = 0;
+let ballSpinRadiansPerSecond = 0;
 const ballVelocity = new THREE.Vector3();
 
 function setRollStatus(message) {
@@ -476,9 +503,12 @@ function throwBall() {
   if (ballInPlay || resetTimer > 0) return;
 
   const direction = new THREE.Vector3(Math.sin(yaw), 0, -Math.cos(yaw)).normalize();
-  ballVelocity.copy(direction).multiplyScalar(11);
-  const hookThreshold = BOARD_WIDTH * 1.5;
-  hookDirection = Math.abs(ball.position.x) > hookThreshold ? -Math.sign(ball.position.x) : 0;
+  const speedWorldUnitsPerSecond = ballSettings.speedMph * 5280 / 3600 * WORLD_UNITS_PER_FOOT;
+  ballVelocity.copy(direction).multiplyScalar(speedWorldUnitsPerSecond);
+  const axisRotation = THREE.MathUtils.degToRad(ballSettings.axisRotationDegrees);
+  const launchSide = Math.sign(ball.position.x) || 1;
+  hookDirection = -launchSide * Math.sin(axisRotation);
+  ballSpinRadiansPerSecond = ballSettings.revRateRpm * Math.PI * 2 / 60;
   ballInPlay = true;
   rollElapsed = 0;
   setRollStatus("Rolling…");
@@ -522,6 +552,7 @@ function finishRoll() {
   ballInPlay = false;
   rollElapsed = 0;
   hookDirection = 0;
+  ballSpinRadiansPerSecond = 0;
   ballVelocity.set(0, 0, 0);
   const knockedDown = pins.length - standingPinCount();
   const result = knockedDown === 10 ? "Strike!" : `${knockedDown} pin${knockedDown === 1 ? "" : "s"} down`;
@@ -555,13 +586,17 @@ function updateBall(deltaSeconds) {
 
   rollElapsed += deltaSeconds;
   ball.position.addScaledVector(ballVelocity, deltaSeconds);
-  ball.rotation.x -= ballVelocity.z * deltaSeconds / BALL_RADIUS_WORLD;
-  ball.rotation.z += ballVelocity.x * deltaSeconds / BALL_RADIUS_WORLD;
+  const rollRotation = ballVelocity.length() * deltaSeconds / BALL_RADIUS_WORLD;
+  ball.rotation.x -= rollRotation;
+  ball.rotation.z += ballSpinRadiansPerSecond * 0.08 * deltaSeconds;
 
   const distanceFeet = Math.max(0, (LANE_FRONT_Z - ball.position.z) / WORLD_UNITS_PER_FOOT);
   const oilDensity = getOilDensity(ball.position.x, distanceFeet);
   const dryLaneFactor = 1 - oilDensity;
-  const hookAcceleration = dryLaneFactor * (0.8 + Math.min(distanceFeet / oilPattern.distanceFeet, 1) * 1.6);
+  const revFactor = THREE.MathUtils.clamp(ballSettings.revRateRpm / 300, 0.33, 2);
+  const axisFactor = Math.abs(hookDirection);
+  const hookAcceleration =
+    dryLaneFactor * revFactor * axisFactor * (0.8 + Math.min(distanceFeet / oilPattern.distanceFeet, 1) * 1.6);
   ballVelocity.x = THREE.MathUtils.clamp(
     ballVelocity.x + hookDirection * hookAcceleration * deltaSeconds,
     -3.5,

@@ -31,6 +31,21 @@
           <option value="house-shot">House Shot</option>
         </select>
       </label>
+      <details id="ball-settings">
+        <summary>Ball settings</summary>
+        <div class="ball-setting">
+          <label for="ball-speed">Ball Speed <output id="ball-speed-value">18 MPH</output></label>
+          <input id="ball-speed" type="range" min="10" max="25" step="1" value="18" />
+        </div>
+        <div class="ball-setting">
+          <label for="rev-rate">Rev Rate <output id="rev-rate-value">300 RPM</output></label>
+          <input id="rev-rate" type="range" min="100" max="600" step="10" value="300" />
+        </div>
+        <div class="ball-setting">
+          <label for="axis-rotation">Axis Rotation <output id="axis-rotation-value">45°</output></label>
+          <input id="axis-rotation" type="range" min="0" max="90" step="1" value="45" />
+        </div>
+      </details>
     </div>
     <script type="module" src="/src/script.js"></script>
   </body>
