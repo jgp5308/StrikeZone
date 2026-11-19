@@ -1,5 +1,5 @@
-import * as THREE from "/node_modules/three/build/three.module.js";
-import { LANE_DESIGN } from "/lane-design.js";
+import * as THREE from "three";
+import { LANE_DESIGN } from "./lane-design.js";
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x101827);
