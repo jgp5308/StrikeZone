@@ -104,20 +104,23 @@ function boardCenter(boardNumber) {
 const oilPattern = LANE_DESIGN.oilPattern;
 const oilMaterialColor = new THREE.Color(0xf0b44f);
 const maxOilMicroliters = 6500;
+const oilBandMaterials = [];
 
 function addOilBand(section) {
   if (section.endFeet <= section.startFeet) return;
 
   const width = (section.endBoard - section.startBoard + 1) * BOARD_WIDTH;
   const length = (section.endFeet - section.startFeet) * WORLD_UNITS_PER_FOOT;
-  const band = new THREE.Mesh(
-    new THREE.BoxGeometry(width, 0.006, length),
-    new THREE.MeshBasicMaterial({
+  const oilDensity = Math.min(section.oilMicroliters / maxOilMicroliters, 1);
+  const material = new THREE.MeshBasicMaterial({
       color: oilMaterialColor,
       transparent: true,
-      opacity: 0.035 + Math.min(section.oilMicroliters / maxOilMicroliters, 1) * 0.08,
+      opacity: 0.035 + oilDensity * 0.08,
       depthWrite: false,
-    })
+    });
+  const band = new THREE.Mesh(
+    new THREE.BoxGeometry(width, 0.006, length),
+    material
   );
   band.position.set(
     boardCenter((section.startBoard + section.endBoard) / 2),
@@ -125,6 +128,7 @@ function addOilBand(section) {
     LANE_FRONT_Z - ((section.startFeet + section.endFeet) / 2) * WORLD_UNITS_PER_FOOT
   );
   band.renderOrder = 1;
+  oilBandMaterials.push({ material, oilDensity });
   scene.add(band);
 }
 
@@ -412,6 +416,23 @@ function updateBallHighlight() {
 
 const rollStatus = document.querySelector("#roll-status");
 const aimControls = document.querySelector("#aim-controls");
+const oilToggle = document.querySelector("#oil-toggle input");
+
+function updateOilVisualization() {
+  const lightBlue = new THREE.Color(0xb9efff);
+  const darkBlue = new THREE.Color(0x075985);
+  for (const { material, oilDensity } of oilBandMaterials) {
+    if (oilToggle.checked) {
+      material.color.copy(lightBlue).lerp(darkBlue, oilDensity);
+      material.opacity = 0.12 + oilDensity * 0.24;
+    } else {
+      material.color.copy(oilMaterialColor);
+      material.opacity = 0.035 + oilDensity * 0.08;
+    }
+  }
+}
+
+oilToggle.addEventListener("change", updateOilVisualization);
 let ballInPlay = false;
 let resetTimer = 0;
 let rollElapsed = 0;
