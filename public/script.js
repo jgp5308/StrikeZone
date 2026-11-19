@@ -315,6 +315,7 @@ scene.add(ball);
 const aimRaycaster = new THREE.Raycaster();
 const screenCenter = new THREE.Vector2(0, 0);
 let isBallTargeted = false;
+let savedCameraState = null;
 
 function updateBallHighlight() {
   aimRaycaster.setFromCamera(screenCenter, camera);
@@ -349,11 +350,26 @@ function throwBall() {
 
 function enterBallView() {
   const throwDirection = new THREE.Vector3(Math.sin(yaw), 0, -Math.cos(yaw)).normalize();
+  savedCameraState = {
+    position: camera.position.clone(),
+    yaw,
+    pitch,
+  };
   camera.position.copy(ball.position).addScaledVector(throwDirection, -1.4);
   camera.position.y += 1.1;
   pitch = -0.16;
   isBallView = true;
   setRollStatus("Ball view • Space to throw");
+}
+
+function exitBallView() {
+  if (!isBallView || !savedCameraState) return;
+  camera.position.copy(savedCameraState.position);
+  yaw = savedCameraState.yaw;
+  pitch = savedCameraState.pitch;
+  savedCameraState = null;
+  isBallView = false;
+  setRollStatus(ballInPlay ? "Rolling…" : "Ready to roll");
 }
 
 function knockPin(pin, direction) {
@@ -422,6 +438,11 @@ const movementSpeed = 5;
 
 window.addEventListener("keydown", (event) => {
   const key = event.key.toLowerCase();
+  if (key === "backspace") {
+    event.preventDefault();
+    exitBallView();
+    return;
+  }
   if (key === " ") {
     event.preventDefault();
     throwBall();
