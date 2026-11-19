@@ -642,7 +642,7 @@ function updateBallAim(deltaSeconds) {
   launchAngle = THREE.MathUtils.clamp(launchAngle, -0.8, 0.8);
 
   launchGuide.position.set(ball.position.x, LANE_SURFACE_Y + 0.125, ball.position.z);
-  launchGuide.rotation.y = launchAngle;
+  launchGuide.rotation.y = -launchAngle;
   launchGuide.visible = true;
 
   let horizontalInput = 0;
