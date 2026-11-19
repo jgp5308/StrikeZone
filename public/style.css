@@ -55,48 +55,16 @@ canvas {
 }
 
 #aim-controls .aim-arrow {
-  position: relative;
   display: block;
   width: 34px;
-  height: 22px;
-}
-
-#aim-controls .aim-arrow::before {
-  content: "";
-  position: absolute;
-  top: 10px;
-  width: 30px;
-  border-top: 2px solid #ffffff;
-  box-shadow: 0 0 4px rgba(0, 0, 0, 0.8);
-}
-
-#aim-controls .aim-arrow::after {
-  content: "";
-  position: absolute;
-  top: 4px;
-  width: 12px;
-  height: 12px;
-  border-top: 2px solid #ffffff;
-  border-left: 2px solid #ffffff;
-  box-shadow: -1px -1px 3px rgba(0, 0, 0, 0.6);
-}
-
-#aim-controls .aim-arrow-left::before {
-  left: 4px;
-}
-
-#aim-controls .aim-arrow-left::after {
-  left: 2px;
-  transform: rotate(-45deg);
-}
-
-#aim-controls .aim-arrow-right::before {
-  right: 4px;
-}
-
-#aim-controls .aim-arrow-right::after {
-  right: 2px;
-  transform: rotate(135deg);
+  height: 24px;
+  overflow: visible;
+  stroke: #ffffff;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+  filter: drop-shadow(0 0 3px rgba(0, 0, 0, 0.8));
 }
 
 #hud {
