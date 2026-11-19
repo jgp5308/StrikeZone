@@ -298,21 +298,19 @@ for (let row = 0; row < 4; row += 1) {
   }
 }
 
+const ballMaterial = new THREE.MeshStandardMaterial({
+  color: 0x2864d7,
+  roughness: 0.25,
+  metalness: 0.2,
+  emissive: 0x000000,
+});
 const ball = new THREE.Mesh(
   new THREE.SphereGeometry(BALL_RADIUS_WORLD, 32, 20),
-  new THREE.MeshStandardMaterial({ color: 0x2864d7, roughness: 0.25, metalness: 0.2 })
+  ballMaterial
 );
 ball.position.copy(BALL_START_POSITION);
 ball.castShadow = true;
 scene.add(ball);
-
-const ballHighlight = new THREE.Mesh(
-  new THREE.TorusGeometry(BALL_RADIUS_WORLD * 1.18, 0.025, 12, 32),
-  new THREE.MeshBasicMaterial({ color: 0xffd34e, transparent: true, opacity: 0.95 })
-);
-ballHighlight.visible = false;
-ballHighlight.position.copy(ball.position);
-scene.add(ballHighlight);
 
 const aimRaycaster = new THREE.Raycaster();
 const screenCenter = new THREE.Vector2(0, 0);
@@ -320,8 +318,8 @@ const screenCenter = new THREE.Vector2(0, 0);
 function updateBallHighlight() {
   aimRaycaster.setFromCamera(screenCenter, camera);
   const aimedAtBall = aimRaycaster.intersectObject(ball, false).length > 0;
-  ballHighlight.visible = aimedAtBall;
-  ballHighlight.position.copy(ball.position);
+  ballMaterial.emissive.setHex(aimedAtBall ? 0x75b8ff : 0x000000);
+  ballMaterial.emissiveIntensity = aimedAtBall ? 1.4 : 0;
 }
 
 const rollStatus = document.querySelector("#roll-status");

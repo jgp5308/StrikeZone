@@ -23,51 +23,13 @@ canvas {
   z-index: 2;
   top: 50%;
   left: 50%;
-  width: 24px;
-  height: 24px;
-  border: 2px solid rgba(255, 255, 255, 0.9);
+  width: 10px;
+  height: 10px;
+  background: #ffffff;
   border-radius: 50%;
   transform: translate(-50%, -50%);
-  box-shadow: 0 0 5px rgba(0, 0, 0, 0.8);
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.9);
   pointer-events: none;
-}
-
-#crosshair::before,
-#crosshair::after,
-#crosshair span::before,
-#crosshair span::after {
-  content: "";
-  position: absolute;
-  background: rgba(255, 255, 255, 0.9);
-  box-shadow: 0 0 4px rgba(0, 0, 0, 0.8);
-}
-
-#crosshair::before,
-#crosshair::after {
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-}
-
-#crosshair::before {
-  width: 32px;
-  height: 2px;
-}
-
-#crosshair::after {
-  width: 2px;
-  height: 32px;
-}
-
-#crosshair span::before,
-#crosshair span::after {
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: #f8d477;
 }
 
 #hud {
