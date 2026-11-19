@@ -33,6 +33,35 @@ canvas {
   pointer-events: none;
 }
 
+#aim-controls {
+  position: fixed;
+  z-index: 2;
+  left: 50%;
+  bottom: 34px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #ffffff;
+  font-size: 1.3rem;
+  font-weight: 700;
+  opacity: 0;
+  transform: translateX(-50%) translateY(8px);
+  transition: opacity 160ms ease, transform 160ms ease;
+  pointer-events: none;
+  text-shadow: 0 2px 6px #000000;
+}
+
+#aim-controls.visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+#aim-controls span:first-child,
+#aim-controls span:last-child {
+  font-size: 2rem;
+  color: #f8d477;
+}
+
 #hud {
   position: fixed;
   z-index: 1;

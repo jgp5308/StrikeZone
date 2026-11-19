@@ -57,6 +57,7 @@ const BALL_FOUL_POSITION = new THREE.Vector3(
   LANE_SURFACE_Y + BALL_RADIUS_WORLD,
   LANE_FRONT_Z
 );
+const BALL_LATERAL_SPEED = 2.5;
 
 const lane = new THREE.Mesh(
   new THREE.BoxGeometry(LANE_WIDTH, 0.2, LANE_SURFACE_LENGTH_WORLD),
@@ -330,6 +331,7 @@ function updateBallHighlight() {
 }
 
 const rollStatus = document.querySelector("#roll-status");
+const aimControls = document.querySelector("#aim-controls");
 let ballInPlay = false;
 let resetTimer = 0;
 let rollElapsed = 0;
@@ -365,6 +367,7 @@ function enterBallView() {
   yaw = 0;
   pitch = -0.16;
   isBallView = true;
+  aimControls.classList.add("visible");
   setRollStatus("Ball view • Space to throw • Backspace to exit");
 }
 
@@ -375,6 +378,7 @@ function exitBallView() {
   pitch = savedCameraState.pitch;
   savedCameraState = null;
   isBallView = false;
+  aimControls.classList.remove("visible");
   setRollStatus(ballInPlay ? "Rolling…" : "Ready to roll");
 }
 
@@ -433,6 +437,23 @@ function updateBall(deltaSeconds) {
   }
 
   if (ball.position.z < PIN_FRONT_Z - PIN_SPACING_WORLD * 4 || rollElapsed > 5) finishRoll();
+}
+
+function updateBallAim(deltaSeconds) {
+  if (!isBallView || ballInPlay) return;
+
+  let horizontalInput = 0;
+  if (pressedKeys.has("a")) horizontalInput -= 1;
+  if (pressedKeys.has("d")) horizontalInput += 1;
+  if (horizontalInput === 0) return;
+
+  const laneEdge = LANE_WIDTH / 2 - BALL_RADIUS_WORLD;
+  ball.position.x = THREE.MathUtils.clamp(
+    ball.position.x + horizontalInput * BALL_LATERAL_SPEED * deltaSeconds,
+    -laneEdge,
+    laneEdge
+  );
+  camera.position.x = ball.position.x;
 }
 
 let yaw = 0;
@@ -523,6 +544,7 @@ function animate(currentTime = 0) {
     if (resetTimer === 0) resetRoll();
   }
   updateBall(deltaSeconds);
+  updateBallAim(deltaSeconds);
   camera.rotation.set(pitch, yaw, 0, "YXZ");
   updateBallHighlight();
   renderer.render(scene, camera);
