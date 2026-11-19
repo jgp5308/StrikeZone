@@ -314,12 +314,13 @@ scene.add(ball);
 
 const aimRaycaster = new THREE.Raycaster();
 const screenCenter = new THREE.Vector2(0, 0);
+let isBallTargeted = false;
 
 function updateBallHighlight() {
   aimRaycaster.setFromCamera(screenCenter, camera);
-  const aimedAtBall = aimRaycaster.intersectObject(ball, false).length > 0;
-  ballMaterial.emissive.setHex(aimedAtBall ? 0x75b8ff : 0x000000);
-  ballMaterial.emissiveIntensity = aimedAtBall ? 1.4 : 0;
+  isBallTargeted = aimRaycaster.intersectObject(ball, false).length > 0;
+  ballMaterial.emissive.setHex(isBallTargeted ? 0x75b8ff : 0x000000);
+  ballMaterial.emissiveIntensity = isBallTargeted ? 1.4 : 0;
 }
 
 const rollStatus = document.querySelector("#roll-status");
@@ -344,6 +345,15 @@ function throwBall() {
   ballInPlay = true;
   rollElapsed = 0;
   setRollStatus("Rolling…");
+}
+
+function enterBallView() {
+  const throwDirection = new THREE.Vector3(Math.sin(yaw), 0, -Math.cos(yaw)).normalize();
+  camera.position.copy(ball.position).addScaledVector(throwDirection, -1.4);
+  camera.position.y += 1.1;
+  pitch = -0.16;
+  isBallView = true;
+  setRollStatus("Ball view • Space to throw");
 }
 
 function knockPin(pin, direction) {
@@ -406,6 +416,7 @@ function updateBall(deltaSeconds) {
 let yaw = 0;
 let pitch = -0.08;
 let isLooking = false;
+let isBallView = false;
 const pressedKeys = new Set();
 const movementSpeed = 5;
 
@@ -426,6 +437,10 @@ window.addEventListener("keyup", (event) => {
 });
 
 renderer.domElement.addEventListener("click", () => {
+  if (isBallTargeted && !ballInPlay && resetTimer === 0) {
+    enterBallView();
+    return;
+  }
   renderer.domElement.requestPointerLock();
 });
 
