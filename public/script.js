@@ -335,32 +335,25 @@ function getOilDensity(x, distanceFeet) {
   return THREE.MathUtils.clamp(totalDensity, 0, 1);
 }
 
-function getOilVolumeForBoard(boardNumber, distanceFeet) {
-  const sections = [...oilPattern.forward, ...oilPattern.reverse];
-  return sections.reduce((volume, section) => {
-    const sectionStart = Math.min(section.startFeet, section.endFeet);
-    const sectionEnd = Math.max(section.startFeet, section.endFeet);
-    if (distanceFeet < sectionStart || distanceFeet > sectionEnd) return volume;
+function getVisualOilDensity(boardNumber, distanceFeet) {
+  if (distanceFeet > 40) return 0;
 
-    const sectionCenter = (section.startBoard + section.endBoard) / 2;
-    const sectionHalfWidth = (section.endBoard - section.startBoard + 1) / 2;
-    const boardDistance = Math.abs(boardNumber - sectionCenter);
-    const boardCoverage = THREE.MathUtils.clamp(
-      1 - Math.max(0, boardDistance - sectionHalfWidth) / 2,
-      0,
-      1
-    );
-    const sectionLength = Math.max(1, sectionEnd - sectionStart);
-    return volume + (section.oilMicroliters / sectionLength) * boardCoverage;
-  }, 0);
+  const distanceProgress = THREE.MathUtils.clamp(distanceFeet / 40, 0, 1);
+  const centerBoard = (BOARD_COUNT + 1) / 2;
+  const boardDistance = Math.abs(boardNumber - centerBoard);
+  const outerHalfWidth = THREE.MathUtils.lerp(17.5, 11.5, distanceProgress);
+
+  if (boardDistance > outerHalfWidth) return 0;
+
+  const coreProgress = THREE.MathUtils.clamp(distanceFeet / 31, 0, 1);
+  const coreHalfWidth = THREE.MathUtils.lerp(10, 5.5, coreProgress);
+  return boardDistance <= coreHalfWidth ? 0.9 : 0.28;
 }
 
 function createOilHeatmap() {
-  const heatmapScale = 650;
   for (let distanceIndex = 0; distanceIndex < oilPattern.distanceFeet; distanceIndex += 1) {
     for (let boardNumber = 1; boardNumber <= BOARD_COUNT; boardNumber += 1) {
-      const oilVolume = getOilVolumeForBoard(boardNumber, distanceIndex + 0.5);
-      const oilDensity = THREE.MathUtils.clamp(oilVolume / heatmapScale, 0, 1);
+      const oilDensity = getVisualOilDensity(boardNumber, distanceIndex + 0.5);
       if (oilDensity === 0) continue;
 
       const material = new THREE.MeshBasicMaterial({
