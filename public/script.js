@@ -52,6 +52,11 @@ const BALL_DIAMETER_INCHES = LANE_DESIGN.ballDiameterInches;
 const BALL_DIAMETER_WORLD = (BALL_DIAMETER_INCHES / 12) * WORLD_UNITS_PER_FOOT;
 const BALL_RADIUS_WORLD = BALL_DIAMETER_WORLD / 2;
 const BALL_START_POSITION = new THREE.Vector3(0, LANE_SURFACE_Y + BALL_RADIUS_WORLD, 5.5);
+const BALL_FOUL_POSITION = new THREE.Vector3(
+  0,
+  LANE_SURFACE_Y + BALL_RADIUS_WORLD,
+  LANE_FRONT_Z
+);
 
 const lane = new THREE.Mesh(
   new THREE.BoxGeometry(LANE_WIDTH, 0.2, LANE_SURFACE_LENGTH_WORLD),
@@ -349,17 +354,18 @@ function throwBall() {
 }
 
 function enterBallView() {
-  const throwDirection = new THREE.Vector3(Math.sin(yaw), 0, -Math.cos(yaw)).normalize();
   savedCameraState = {
     position: camera.position.clone(),
     yaw,
     pitch,
   };
-  camera.position.copy(ball.position).addScaledVector(throwDirection, -1.4);
-  camera.position.y += 1.1;
+  ball.position.copy(BALL_FOUL_POSITION);
+  ball.rotation.set(0, 0, 0);
+  camera.position.set(0, BALL_FOUL_POSITION.y + 1.1, LANE_FRONT_Z + 1.4);
+  yaw = 0;
   pitch = -0.16;
   isBallView = true;
-  setRollStatus("Ball view • Space to throw");
+  setRollStatus("Ball view • Space to throw • Backspace to exit");
 }
 
 function exitBallView() {
@@ -390,7 +396,7 @@ function finishRoll() {
 }
 
 function resetRoll() {
-  ball.position.copy(BALL_START_POSITION);
+  ball.position.copy(BALL_FOUL_POSITION);
   ball.rotation.set(0, 0, 0);
   for (const pin of pins) {
     pin.knocked = false;
@@ -470,7 +476,7 @@ document.addEventListener("pointerlockchange", () => {
 });
 
 document.addEventListener("mousemove", (event) => {
-  if (!isLooking) return;
+  if (!isLooking || isBallView) return;
   yaw -= event.movementX * 0.002;
   pitch -= event.movementY * 0.002;
   pitch = THREE.MathUtils.clamp(pitch, -0.8, 0.5);
@@ -485,6 +491,8 @@ function resize() {
 window.addEventListener("resize", resize);
 
 function updateMovement(deltaSeconds) {
+  if (isBallView) return;
+
   const forward = new THREE.Vector3(-Math.sin(yaw), 0, -Math.cos(yaw));
   const right = new THREE.Vector3(Math.cos(yaw), 0, -Math.sin(yaw));
   const movement = new THREE.Vector3();
