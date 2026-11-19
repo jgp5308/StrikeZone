@@ -336,10 +336,10 @@ function addBallHole(normal, radius) {
   ball.add(hole);
 }
 
-// One thumb hole above two wider-spaced finger holes.
+// One thumb hole above two close finger holes, roughly 3 inches lower.
 addBallHole(new THREE.Vector3(0, 0.98, 0.1), BALL_RADIUS_WORLD * 0.2);
-addBallHole(new THREE.Vector3(-0.48, 0.8, 0.2), BALL_RADIUS_WORLD * 0.14);
-addBallHole(new THREE.Vector3(0.48, 0.8, 0.2), BALL_RADIUS_WORLD * 0.14);
+addBallHole(new THREE.Vector3(-0.21, 0.3, 0.93), BALL_RADIUS_WORLD * 0.14);
+addBallHole(new THREE.Vector3(0.21, 0.3, 0.93), BALL_RADIUS_WORLD * 0.14);
 
 const aimRaycaster = new THREE.Raycaster();
 const screenCenter = new THREE.Vector2(0, 0);
