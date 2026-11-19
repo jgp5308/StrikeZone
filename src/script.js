@@ -521,8 +521,7 @@ function throwBall() {
   const speedWorldUnitsPerSecond = ballSettings.speedMph * 5280 / 3600 * WORLD_UNITS_PER_FOOT;
   ballVelocity.copy(direction).multiplyScalar(speedWorldUnitsPerSecond);
   const axisRotation = THREE.MathUtils.degToRad(ballSettings.axisRotationDegrees);
-  const launchSide = Math.sign(ball.position.x) || 1;
-  hookDirection = -launchSide * Math.sin(axisRotation);
+  hookDirection = -Math.sin(axisRotation);
   ballSpinRadiansPerSecond = ballSettings.revRateRpm * Math.PI * 2 / 60;
   ballInPlay = true;
   rollElapsed = 0;
