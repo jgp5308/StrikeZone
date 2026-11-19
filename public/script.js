@@ -306,6 +306,24 @@ ball.position.copy(BALL_START_POSITION);
 ball.castShadow = true;
 scene.add(ball);
 
+const ballHighlight = new THREE.Mesh(
+  new THREE.TorusGeometry(BALL_RADIUS_WORLD * 1.18, 0.025, 12, 32),
+  new THREE.MeshBasicMaterial({ color: 0xffd34e, transparent: true, opacity: 0.95 })
+);
+ballHighlight.visible = false;
+ballHighlight.position.copy(ball.position);
+scene.add(ballHighlight);
+
+const aimRaycaster = new THREE.Raycaster();
+const screenCenter = new THREE.Vector2(0, 0);
+
+function updateBallHighlight() {
+  aimRaycaster.setFromCamera(screenCenter, camera);
+  const aimedAtBall = aimRaycaster.intersectObject(ball, false).length > 0;
+  ballHighlight.visible = aimedAtBall;
+  ballHighlight.position.copy(ball.position);
+}
+
 const rollStatus = document.querySelector("#roll-status");
 let ballInPlay = false;
 let resetTimer = 0;
@@ -464,6 +482,7 @@ function animate(currentTime = 0) {
   }
   updateBall(deltaSeconds);
   camera.rotation.set(pitch, yaw, 0, "YXZ");
+  updateBallHighlight();
   renderer.render(scene, camera);
 }
 
