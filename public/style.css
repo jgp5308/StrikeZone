@@ -25,7 +25,8 @@ canvas {
   left: 50%;
   width: 10px;
   height: 10px;
-  background: #ffffff;
+  background: transparent;
+  border: 2px solid #ffffff;
   border-radius: 50%;
   transform: translate(-50%, -50%);
   box-shadow: 0 0 5px rgba(0, 0, 0, 0.9);
