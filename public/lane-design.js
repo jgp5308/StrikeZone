@@ -24,4 +24,26 @@ export const LANE_DESIGN = Object.freeze({
     { boards: [15, 25], startFeet: 34 },
     { boards: [10, 30], startFeet: 40 },
   ],
+  oilPattern: {
+    name: "2022 Starting House Pattern",
+    distanceFeet: 43,
+    ratio: 12,
+    totalVolumeMl: 25.4,
+    forward: [
+      { startBoard: 18, endBoard: 22, startFeet: 0, endFeet: 0, oilMicroliters: 1850 },
+      { startBoard: 11, endBoard: 29, startFeet: 0, endFeet: 3, oilMicroliters: 1150 },
+      { startBoard: 10, endBoard: 30, startFeet: 3, endFeet: 8, oilMicroliters: 2100 },
+      { startBoard: 9, endBoard: 31, startFeet: 8, endFeet: 15, oilMicroliters: 2850 },
+      { startBoard: 8, endBoard: 32, startFeet: 15, endFeet: 25, oilMicroliters: 3400 },
+      { startBoard: 7, endBoard: 33, startFeet: 25, endFeet: 28, oilMicroliters: 750 },
+    ],
+    reverse: [
+      { startBoard: 8, endBoard: 32, startFeet: 32, endFeet: 37, oilMicroliters: 1700 },
+      { startBoard: 9, endBoard: 31, startFeet: 27, endFeet: 32, oilMicroliters: 1900 },
+      { startBoard: 10, endBoard: 30, startFeet: 19, endFeet: 27, oilMicroliters: 3150 },
+      { startBoard: 11, endBoard: 29, startFeet: 12, endFeet: 19, oilMicroliters: 3450 },
+      { startBoard: 12, endBoard: 28, startFeet: 9, endFeet: 12, oilMicroliters: 1250 },
+      { startBoard: 18, endBoard: 22, startFeet: 7, endFeet: 9, oilMicroliters: 1850 },
+    ],
+  },
 });

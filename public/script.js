@@ -101,6 +101,37 @@ function boardCenter(boardNumber) {
   return (boardNumber - (BOARD_COUNT + 1) / 2) * BOARD_WIDTH;
 }
 
+const oilPattern = LANE_DESIGN.oilPattern;
+const oilMaterialColor = new THREE.Color(0xf0b44f);
+const maxOilMicroliters = 6500;
+
+function addOilBand(section) {
+  if (section.endFeet <= section.startFeet) return;
+
+  const width = (section.endBoard - section.startBoard + 1) * BOARD_WIDTH;
+  const length = (section.endFeet - section.startFeet) * WORLD_UNITS_PER_FOOT;
+  const band = new THREE.Mesh(
+    new THREE.BoxGeometry(width, 0.006, length),
+    new THREE.MeshBasicMaterial({
+      color: oilMaterialColor,
+      transparent: true,
+      opacity: 0.035 + Math.min(section.oilMicroliters / maxOilMicroliters, 1) * 0.08,
+      depthWrite: false,
+    })
+  );
+  band.position.set(
+    boardCenter((section.startBoard + section.endBoard) / 2),
+    LANE_SURFACE_Y + 0.014,
+    LANE_FRONT_Z - ((section.startFeet + section.endFeet) / 2) * WORLD_UNITS_PER_FOOT
+  );
+  band.renderOrder = 1;
+  scene.add(band);
+}
+
+for (const section of [...oilPattern.forward, ...oilPattern.reverse]) {
+  addOilBand(section);
+}
+
 const darkBrownMaterial = new THREE.MeshStandardMaterial({
   color: 0x4b2618,
   roughness: 0.75,
@@ -304,6 +335,32 @@ for (let row = 0; row < 4; row += 1) {
   }
 }
 
+function sectionOilDensity(section, distanceFeet, boardNumber) {
+  const sectionStart = Math.min(section.startFeet, section.endFeet);
+  const sectionEnd = Math.max(section.startFeet, section.endFeet);
+  if (distanceFeet < sectionStart || distanceFeet > sectionEnd) return 0;
+
+  const sectionCenter = (section.startBoard + section.endBoard) / 2;
+  const sectionHalfWidth = (section.endBoard - section.startBoard + 1) / 2;
+  const boardDistance = Math.abs(boardNumber - sectionCenter);
+  const boardCoverage = THREE.MathUtils.clamp(
+    1 - Math.max(0, boardDistance - sectionHalfWidth) / 2,
+    0,
+    1
+  );
+  return (section.oilMicroliters / maxOilMicroliters) * boardCoverage;
+}
+
+function getOilDensity(x, distanceFeet) {
+  const boardNumber = (BOARD_COUNT + 1) / 2 + x / BOARD_WIDTH;
+  const sections = [...oilPattern.forward, ...oilPattern.reverse];
+  const totalDensity = sections.reduce(
+    (density, section) => density + sectionOilDensity(section, distanceFeet, boardNumber),
+    0
+  );
+  return THREE.MathUtils.clamp(totalDensity, 0, 1);
+}
+
 const ballMaterial = new THREE.MeshStandardMaterial({
   color: 0x2864d7,
   roughness: 0.25,
@@ -358,6 +415,7 @@ const aimControls = document.querySelector("#aim-controls");
 let ballInPlay = false;
 let resetTimer = 0;
 let rollElapsed = 0;
+let hookDirection = 0;
 const ballVelocity = new THREE.Vector3();
 
 function setRollStatus(message) {
@@ -373,6 +431,8 @@ function throwBall() {
 
   const direction = new THREE.Vector3(Math.sin(yaw), 0, -Math.cos(yaw)).normalize();
   ballVelocity.copy(direction).multiplyScalar(11);
+  const hookThreshold = BOARD_WIDTH * 1.5;
+  hookDirection = Math.abs(ball.position.x) > hookThreshold ? -Math.sign(ball.position.x) : 0;
   ballInPlay = true;
   rollElapsed = 0;
   setRollStatus("Rolling…");
@@ -415,6 +475,7 @@ function knockPin(pin, direction) {
 function finishRoll() {
   ballInPlay = false;
   rollElapsed = 0;
+  hookDirection = 0;
   ballVelocity.set(0, 0, 0);
   const knockedDown = pins.length - standingPinCount();
   const result = knockedDown === 10 ? "Strike!" : `${knockedDown} pin${knockedDown === 1 ? "" : "s"} down`;
@@ -450,6 +511,16 @@ function updateBall(deltaSeconds) {
   ball.position.addScaledVector(ballVelocity, deltaSeconds);
   ball.rotation.x -= ballVelocity.z * deltaSeconds / BALL_RADIUS_WORLD;
   ball.rotation.z += ballVelocity.x * deltaSeconds / BALL_RADIUS_WORLD;
+
+  const distanceFeet = Math.max(0, (LANE_FRONT_Z - ball.position.z) / WORLD_UNITS_PER_FOOT);
+  const oilDensity = getOilDensity(ball.position.x, distanceFeet);
+  const dryLaneFactor = 1 - oilDensity;
+  const hookAcceleration = dryLaneFactor * (0.8 + Math.min(distanceFeet / oilPattern.distanceFeet, 1) * 1.6);
+  ballVelocity.x = THREE.MathUtils.clamp(
+    ballVelocity.x + hookDirection * hookAcceleration * deltaSeconds,
+    -3.5,
+    3.5
+  );
 
   for (const pin of pins) {
     if (pin.knocked) continue;
