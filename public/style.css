@@ -147,3 +147,23 @@ canvas {
   transform: translateX(16px);
   background: #e0f2fe;
 }
+
+#pattern-picker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  color: #cbd5e1;
+  font-size: 0.9rem;
+  pointer-events: auto;
+}
+
+#pattern-select {
+  min-width: 110px;
+  padding: 3px 6px;
+  border: 1px solid #64748b;
+  border-radius: 4px;
+  color: #e2e8f0;
+  background: rgba(15, 23, 42, 0.9);
+  cursor: pointer;
+}

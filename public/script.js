@@ -432,6 +432,7 @@ function updateBallHighlight() {
 const rollStatus = document.querySelector("#roll-status");
 const aimControls = document.querySelector("#aim-controls");
 const oilToggle = document.querySelector("#oil-toggle input");
+const patternSelect = document.querySelector("#pattern-select");
 
 function updateOilVisualization() {
   const lightBlue = new THREE.Color(0xb9efff);
@@ -448,6 +449,15 @@ function updateOilVisualization() {
 }
 
 oilToggle.addEventListener("change", updateOilVisualization);
+
+function loadPattern(patternId) {
+  if (patternId !== "house-shot") return;
+  updateOilVisualization();
+  setRollStatus("House Shot loaded");
+}
+
+patternSelect.addEventListener("change", () => loadPattern(patternSelect.value));
+patternSelect.addEventListener("click", () => loadPattern(patternSelect.value));
 let ballInPlay = false;
 let resetTimer = 0;
 let rollElapsed = 0;
