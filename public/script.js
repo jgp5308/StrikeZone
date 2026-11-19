@@ -51,6 +51,7 @@ const PIN_SPACING_WORLD = (PIN_SPACING_INCHES / 12) * WORLD_UNITS_PER_FOOT;
 const BALL_DIAMETER_INCHES = LANE_DESIGN.ballDiameterInches;
 const BALL_DIAMETER_WORLD = (BALL_DIAMETER_INCHES / 12) * WORLD_UNITS_PER_FOOT;
 const BALL_RADIUS_WORLD = BALL_DIAMETER_WORLD / 2;
+const BALL_START_POSITION = new THREE.Vector3(0, LANE_SURFACE_Y + BALL_RADIUS_WORLD, 5.5);
 
 const lane = new THREE.Mesh(
   new THREE.BoxGeometry(LANE_WIDTH, 0.2, LANE_SURFACE_LENGTH_WORLD),
@@ -228,6 +229,8 @@ function createGutter(side) {
 createGutter(-1);
 createGutter(1);
 
+const pins = [];
+
 function createPin(x, z) {
   const pin = new THREE.Group();
 
@@ -276,6 +279,13 @@ function createPin(x, z) {
 
   pin.scale.setScalar(PIN_HEIGHT_WORLD / PIN_REFERENCE_HEIGHT);
   pin.position.set(x, LANE_SURFACE_Y, z);
+  pins.push({
+    group: pin,
+    origin: new THREE.Vector3(x, LANE_SURFACE_Y, z),
+    knocked: false,
+    velocity: new THREE.Vector3(),
+    spin: 0,
+  });
   scene.add(pin);
 }
 
@@ -292,9 +302,90 @@ const ball = new THREE.Mesh(
   new THREE.SphereGeometry(BALL_RADIUS_WORLD, 32, 20),
   new THREE.MeshStandardMaterial({ color: 0x2864d7, roughness: 0.25, metalness: 0.2 })
 );
-ball.position.set(0, 0.1 + BALL_RADIUS_WORLD, 5.5);
+ball.position.copy(BALL_START_POSITION);
 ball.castShadow = true;
 scene.add(ball);
+
+const rollStatus = document.querySelector("#roll-status");
+let ballInPlay = false;
+let resetTimer = 0;
+let rollElapsed = 0;
+const ballVelocity = new THREE.Vector3();
+
+function setRollStatus(message) {
+  rollStatus.textContent = message;
+}
+
+function standingPinCount() {
+  return pins.reduce((count, pin) => count + (pin.knocked ? 0 : 1), 0);
+}
+
+function throwBall() {
+  if (ballInPlay || resetTimer > 0) return;
+
+  const direction = new THREE.Vector3(Math.sin(yaw), 0, -Math.cos(yaw)).normalize();
+  ballVelocity.copy(direction).multiplyScalar(11);
+  ballInPlay = true;
+  rollElapsed = 0;
+  setRollStatus("Rolling…");
+}
+
+function knockPin(pin, direction) {
+  pin.knocked = true;
+  pin.velocity.copy(direction).multiplyScalar(2.2);
+  pin.velocity.y = 2.4;
+  pin.spin = (pin.group.position.x >= 0 ? 1 : -1) * 5;
+}
+
+function finishRoll() {
+  ballInPlay = false;
+  rollElapsed = 0;
+  ballVelocity.set(0, 0, 0);
+  const knockedDown = pins.length - standingPinCount();
+  const result = knockedDown === 10 ? "Strike!" : `${knockedDown} pin${knockedDown === 1 ? "" : "s"} down`;
+  setRollStatus(`${result} Resetting…`);
+  resetTimer = 2.2;
+}
+
+function resetRoll() {
+  ball.position.copy(BALL_START_POSITION);
+  ball.rotation.set(0, 0, 0);
+  for (const pin of pins) {
+    pin.knocked = false;
+    pin.velocity.set(0, 0, 0);
+    pin.group.position.copy(pin.origin);
+    pin.group.rotation.set(0, 0, 0);
+    pin.group.visible = true;
+  }
+  setRollStatus("Ready to roll");
+}
+
+function updateBall(deltaSeconds) {
+  for (const pin of pins) {
+    if (!pin.knocked) continue;
+    pin.velocity.y -= 7 * deltaSeconds;
+    pin.group.position.addScaledVector(pin.velocity, deltaSeconds);
+    pin.group.rotation.z += pin.spin * deltaSeconds;
+    if (pin.group.position.y < -0.3) pin.group.visible = false;
+  }
+
+  if (!ballInPlay) return;
+
+  rollElapsed += deltaSeconds;
+  ball.position.addScaledVector(ballVelocity, deltaSeconds);
+  ball.rotation.x -= ballVelocity.z * deltaSeconds / BALL_RADIUS_WORLD;
+  ball.rotation.z += ballVelocity.x * deltaSeconds / BALL_RADIUS_WORLD;
+
+  for (const pin of pins) {
+    if (pin.knocked) continue;
+    const distance = Math.hypot(ball.position.x - pin.group.position.x, ball.position.z - pin.group.position.z);
+    if (distance < BALL_RADIUS_WORLD + PIN_HEIGHT_WORLD * 0.16) {
+      knockPin(pin, ballVelocity.clone().normalize());
+    }
+  }
+
+  if (ball.position.z < PIN_FRONT_Z - PIN_SPACING_WORLD * 4 || rollElapsed > 5) finishRoll();
+}
 
 let yaw = 0;
 let pitch = -0.08;
@@ -304,6 +395,11 @@ const movementSpeed = 5;
 
 window.addEventListener("keydown", (event) => {
   const key = event.key.toLowerCase();
+  if (key === " ") {
+    event.preventDefault();
+    throwBall();
+    return;
+  }
   if (!["w", "a", "s", "d"].includes(key)) return;
   event.preventDefault();
   pressedKeys.add(key);
@@ -362,6 +458,11 @@ function animate(currentTime = 0) {
   const deltaSeconds = Math.min((currentTime - lastFrameTime) / 1000, 0.05);
   lastFrameTime = currentTime;
   updateMovement(deltaSeconds);
+  if (resetTimer > 0) {
+    resetTimer = Math.max(0, resetTimer - deltaSeconds);
+    if (resetTimer === 0) resetRoll();
+  }
+  updateBall(deltaSeconds);
   camera.rotation.set(pitch, yaw, 0, "YXZ");
   renderer.render(scene, camera);
 }

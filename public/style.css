@@ -37,3 +37,10 @@ canvas {
   margin: 8px 0 0;
   color: #cbd5e1;
 }
+
+#roll-status {
+  margin-top: 12px;
+  color: #f8d477;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
