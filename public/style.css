@@ -40,10 +40,8 @@ canvas {
   bottom: 34px;
   display: flex;
   align-items: center;
-  gap: 12px;
-  color: #ffffff;
-  font-size: 1.3rem;
-  font-weight: 700;
+  justify-content: space-between;
+  width: 220px;
   opacity: 0;
   transform: translateX(-50%) translateY(8px);
   transition: opacity 160ms ease, transform 160ms ease;
@@ -56,10 +54,49 @@ canvas {
   transform: translateX(-50%) translateY(0);
 }
 
-#aim-controls span:first-child,
-#aim-controls span:last-child {
-  font-size: 2rem;
-  color: #f8d477;
+#aim-controls .aim-arrow {
+  position: relative;
+  display: block;
+  width: 34px;
+  height: 22px;
+}
+
+#aim-controls .aim-arrow::before {
+  content: "";
+  position: absolute;
+  top: 10px;
+  width: 30px;
+  border-top: 2px solid #ffffff;
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.8);
+}
+
+#aim-controls .aim-arrow::after {
+  content: "";
+  position: absolute;
+  top: 4px;
+  width: 12px;
+  height: 12px;
+  border-top: 2px solid #ffffff;
+  border-left: 2px solid #ffffff;
+  box-shadow: -1px -1px 3px rgba(0, 0, 0, 0.6);
+}
+
+#aim-controls .aim-arrow-left::before {
+  left: 4px;
+}
+
+#aim-controls .aim-arrow-left::after {
+  left: 2px;
+  transform: rotate(-45deg);
+}
+
+#aim-controls .aim-arrow-right::before {
+  right: 4px;
+}
+
+#aim-controls .aim-arrow-right::after {
+  right: 2px;
+  transform: rotate(135deg);
 }
 
 #hud {
