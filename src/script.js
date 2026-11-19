@@ -449,10 +449,17 @@ const ballSettings = {
 function updateBallSettings() {
   ballSettings.speedMph = Number(ballSpeedInput.value);
   ballSettings.revRateRpm = Number(revRateInput.value);
-  ballSettings.axisRotationDegrees = Number(axisRotationInput.value);
+  ballSettings.axisRotationDegrees = Number(axisRotationInput.value) - 90;
   ballSpeedValue.textContent = `${ballSettings.speedMph} MPH`;
   revRateValue.textContent = `${ballSettings.revRateRpm} RPM`;
-  axisRotationValue.textContent = `${ballSettings.axisRotationDegrees}°`;
+  const axisRotationMagnitude = Math.abs(ballSettings.axisRotationDegrees);
+  const axisRotationSide =
+    ballSettings.axisRotationDegrees < 0
+      ? " Right"
+      : ballSettings.axisRotationDegrees > 0
+        ? " Left"
+        : "";
+  axisRotationValue.textContent = `${axisRotationMagnitude}°${axisRotationSide}`;
 }
 
 for (const input of [ballSpeedInput, revRateInput, axisRotationInput]) {
