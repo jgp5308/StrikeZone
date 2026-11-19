@@ -106,36 +106,6 @@ const oilMaterialColor = new THREE.Color(0xf0b44f);
 const maxOilMicroliters = 6500;
 const oilBandMaterials = [];
 
-function addOilBand(section) {
-  if (section.endFeet <= section.startFeet) return;
-
-  const width = (section.endBoard - section.startBoard + 1) * BOARD_WIDTH;
-  const length = (section.endFeet - section.startFeet) * WORLD_UNITS_PER_FOOT;
-  const oilDensity = Math.min(section.oilMicroliters / maxOilMicroliters, 1);
-  const material = new THREE.MeshBasicMaterial({
-      color: oilMaterialColor,
-      transparent: true,
-      opacity: 0.035 + oilDensity * 0.08,
-      depthWrite: false,
-    });
-  const band = new THREE.Mesh(
-    new THREE.BoxGeometry(width, 0.006, length),
-    material
-  );
-  band.position.set(
-    boardCenter((section.startBoard + section.endBoard) / 2),
-    LANE_SURFACE_Y + 0.014,
-    LANE_FRONT_Z - ((section.startFeet + section.endFeet) / 2) * WORLD_UNITS_PER_FOOT
-  );
-  band.renderOrder = 1;
-  oilBandMaterials.push({ material, oilDensity });
-  scene.add(band);
-}
-
-for (const section of [...oilPattern.forward, ...oilPattern.reverse]) {
-  addOilBand(section);
-}
-
 const darkBrownMaterial = new THREE.MeshStandardMaterial({
   color: 0x4b2618,
   roughness: 0.75,
@@ -364,6 +334,58 @@ function getOilDensity(x, distanceFeet) {
   );
   return THREE.MathUtils.clamp(totalDensity, 0, 1);
 }
+
+function getOilVolumeForBoard(boardNumber, distanceFeet) {
+  const sections = [...oilPattern.forward, ...oilPattern.reverse];
+  return sections.reduce((volume, section) => {
+    const sectionStart = Math.min(section.startFeet, section.endFeet);
+    const sectionEnd = Math.max(section.startFeet, section.endFeet);
+    if (distanceFeet < sectionStart || distanceFeet > sectionEnd) return volume;
+
+    const sectionCenter = (section.startBoard + section.endBoard) / 2;
+    const sectionHalfWidth = (section.endBoard - section.startBoard + 1) / 2;
+    const boardDistance = Math.abs(boardNumber - sectionCenter);
+    const boardCoverage = THREE.MathUtils.clamp(
+      1 - Math.max(0, boardDistance - sectionHalfWidth) / 2,
+      0,
+      1
+    );
+    const sectionLength = Math.max(1, sectionEnd - sectionStart);
+    return volume + (section.oilMicroliters / sectionLength) * boardCoverage;
+  }, 0);
+}
+
+function createOilHeatmap() {
+  const heatmapScale = 650;
+  for (let distanceIndex = 0; distanceIndex < oilPattern.distanceFeet; distanceIndex += 1) {
+    for (let boardNumber = 1; boardNumber <= BOARD_COUNT; boardNumber += 1) {
+      const oilVolume = getOilVolumeForBoard(boardNumber, distanceIndex + 0.5);
+      const oilDensity = THREE.MathUtils.clamp(oilVolume / heatmapScale, 0, 1);
+      if (oilDensity === 0) continue;
+
+      const material = new THREE.MeshBasicMaterial({
+        color: oilMaterialColor,
+        transparent: true,
+        opacity: 0.04 + oilDensity * 0.1,
+        depthWrite: false,
+      });
+      const tile = new THREE.Mesh(
+        new THREE.BoxGeometry(BOARD_WIDTH * 1.02, 0.006, WORLD_UNITS_PER_FOOT),
+        material
+      );
+      tile.position.set(
+        boardCenter(boardNumber),
+        LANE_SURFACE_Y + 0.014,
+        LANE_FRONT_Z - (distanceIndex + 0.5) * WORLD_UNITS_PER_FOOT
+      );
+      tile.renderOrder = 1;
+      oilBandMaterials.push({ material, oilDensity });
+      scene.add(tile);
+    }
+  }
+}
+
+createOilHeatmap();
 
 const ballMaterial = new THREE.MeshStandardMaterial({
   color: 0x2864d7,
