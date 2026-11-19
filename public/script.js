@@ -318,6 +318,29 @@ ball.position.copy(BALL_START_POSITION);
 ball.castShadow = true;
 scene.add(ball);
 
+const ballHoleMaterial = new THREE.MeshStandardMaterial({
+  color: 0x07101f,
+  roughness: 0.85,
+  metalness: 0.05,
+});
+
+function addBallHole(normal, radius) {
+  const surfaceNormal = normal.normalize();
+  const hole = new THREE.Mesh(
+    new THREE.CylinderGeometry(radius, radius, 0.035, 20),
+    ballHoleMaterial
+  );
+  hole.position.copy(surfaceNormal).multiplyScalar(BALL_RADIUS_WORLD * 1.005);
+  hole.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), surfaceNormal);
+  hole.castShadow = true;
+  ball.add(hole);
+}
+
+// One thumb hole at the back and two smaller finger holes toward the front.
+addBallHole(new THREE.Vector3(0, 0.82, 0.57), BALL_RADIUS_WORLD * 0.2);
+addBallHole(new THREE.Vector3(-0.28, 0.88, 0.36), BALL_RADIUS_WORLD * 0.14);
+addBallHole(new THREE.Vector3(0.28, 0.88, 0.36), BALL_RADIUS_WORLD * 0.14);
+
 const aimRaycaster = new THREE.Raycaster();
 const screenCenter = new THREE.Vector2(0, 0);
 let isBallTargeted = false;
