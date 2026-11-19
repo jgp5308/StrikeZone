@@ -394,6 +394,16 @@ ball.position.copy(BALL_START_POSITION);
 ball.castShadow = true;
 scene.add(ball);
 
+const launchGuide = new THREE.Line(
+  new THREE.BufferGeometry().setFromPoints([
+    new THREE.Vector3(0, 0, 0),
+    new THREE.Vector3(0, 0, -7),
+  ]),
+  new THREE.LineBasicMaterial({ color: 0xf8d477, transparent: true, opacity: 0.85 })
+);
+launchGuide.visible = false;
+scene.add(launchGuide);
+
 const ballHoleMaterial = new THREE.MeshStandardMaterial({
   color: 0x000000,
   roughness: 1,
@@ -489,6 +499,7 @@ let resetTimer = 0;
 let rollElapsed = 0;
 let hookDirection = 0;
 let ballSpinRadiansPerSecond = 0;
+let launchAngle = 0;
 const ballVelocity = new THREE.Vector3();
 
 function setRollStatus(message) {
@@ -502,7 +513,11 @@ function standingPinCount() {
 function throwBall() {
   if (ballInPlay || resetTimer > 0) return;
 
-  const direction = new THREE.Vector3(Math.sin(yaw), 0, -Math.cos(yaw)).normalize();
+  const direction = new THREE.Vector3(
+    Math.sin(launchAngle),
+    0,
+    -Math.cos(launchAngle)
+  ).normalize();
   const speedWorldUnitsPerSecond = ballSettings.speedMph * 5280 / 3600 * WORLD_UNITS_PER_FOOT;
   ballVelocity.copy(direction).multiplyScalar(speedWorldUnitsPerSecond);
   const axisRotation = THREE.MathUtils.degToRad(ballSettings.axisRotationDegrees);
@@ -511,6 +526,7 @@ function throwBall() {
   ballSpinRadiansPerSecond = ballSettings.revRateRpm * Math.PI * 2 / 60;
   ballInPlay = true;
   rollElapsed = 0;
+  launchGuide.visible = false;
   setRollStatus("Rolling…");
 }
 
@@ -522,6 +538,7 @@ function enterBallView() {
   };
   ball.position.copy(BALL_FOUL_POSITION);
   ball.rotation.set(0, 0, 0);
+  launchAngle = 0;
   camera.position.set(0, BALL_FOUL_POSITION.y + 1.1, LANE_FRONT_Z + 1.4);
   yaw = 0;
   pitch = -0.16;
@@ -538,6 +555,7 @@ function exitBallView() {
   savedCameraState = null;
   isBallView = false;
   aimControls.classList.remove("visible");
+  launchGuide.visible = false;
   setRollStatus(ballInPlay ? "Rolling…" : "Ready to roll");
 }
 
@@ -617,6 +635,16 @@ function updateBall(deltaSeconds) {
 function updateBallAim(deltaSeconds) {
   if (!isBallView || ballInPlay) return;
 
+  let aimInput = 0;
+  if (pressedKeys.has("arrowleft")) aimInput -= 1;
+  if (pressedKeys.has("arrowright")) aimInput += 1;
+  launchAngle += aimInput * 0.9 * deltaSeconds;
+  launchAngle = THREE.MathUtils.clamp(launchAngle, -0.8, 0.8);
+
+  launchGuide.position.set(ball.position.x, LANE_SURFACE_Y + 0.125, ball.position.z);
+  launchGuide.rotation.y = launchAngle;
+  launchGuide.visible = true;
+
   let horizontalInput = 0;
   if (pressedKeys.has("a")) horizontalInput -= 1;
   if (pressedKeys.has("d")) horizontalInput += 1;
@@ -648,6 +676,11 @@ window.addEventListener("keydown", (event) => {
   if (key === " ") {
     event.preventDefault();
     throwBall();
+    return;
+  }
+  if (key === "arrowleft" || key === "arrowright") {
+    event.preventDefault();
+    pressedKeys.add(key);
     return;
   }
   if (!["w", "a", "s", "d"].includes(key)) return;
