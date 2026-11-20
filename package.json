@@ -4,11 +4,11 @@
   "description": "A bowling video game",
   "main": "server.js",
   "scripts": {
-  "dev": "vite",
-  "build": "vite build",
-  "preview": "vite preview",
-  "start": "node server.js"
-},
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "start": "node server.js"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
@@ -22,10 +22,17 @@
   },
   "homepage": "https://github.com/jgp5308/StrikeZone#readme",
   "dependencies": {
+    "@dimforge/rapier3d": "^0.21.0",
+    "@dimforge/rapier3d-compat": "^0.21.0",
     "express": "^5.3.0",
     "three": "^0.187.0"
   },
   "devDependencies": {
-    "vite": "^8.3.8"
+    "vite": "^8.3.8",
+    "vite-plugin-top-level-await": "^1.2.2",
+    "vite-plugin-wasm": "^3.6.0"
+  },
+  "allowScripts": {
+    "@swc/core@1.16.22": true
   }
 }
