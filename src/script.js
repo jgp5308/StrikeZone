@@ -300,7 +300,8 @@ function createPin(x, z) {
     origin: new THREE.Vector3(x, LANE_SURFACE_Y, z),
     knocked: false,
     velocity: new THREE.Vector3(),
-    spin: 0,
+    angularVelocity: new THREE.Vector3(),
+    collisionRadius: PIN_HEIGHT_WORLD * 0.16,
   });
   scene.add(pin);
 }
@@ -578,9 +579,13 @@ function exitBallView() {
 
 function knockPin(pin, direction) {
   pin.knocked = true;
-  pin.velocity.copy(direction).multiplyScalar(2.2);
-  pin.velocity.y = 2.4;
-  pin.spin = (pin.group.position.x >= 0 ? 1 : -1) * 5;
+  const impactDirection = direction.clone();
+  impactDirection.y = 0;
+  if (impactDirection.lengthSq() === 0) impactDirection.set(0, 0, -1);
+  impactDirection.normalize();
+  pin.velocity.addScaledVector(impactDirection, 2.2);
+  pin.velocity.y = Math.max(pin.velocity.y, 2.4);
+  pin.angularVelocity.set(-impactDirection.z * 8, 0, impactDirection.x * 8);
 }
 
 function finishRoll() {
@@ -602,6 +607,7 @@ function resetRoll() {
   for (const pin of pins) {
     pin.knocked = false;
     pin.velocity.set(0, 0, 0);
+    pin.angularVelocity.set(0, 0, 0);
     pin.group.position.copy(pin.origin);
     pin.group.rotation.set(0, 0, 0);
     pin.group.visible = true;
@@ -631,8 +637,20 @@ function updateBall(deltaSeconds) {
     if (!pin.knocked) continue;
     pin.velocity.y -= 7 * deltaSeconds;
     pin.group.position.addScaledVector(pin.velocity, deltaSeconds);
-    pin.group.rotation.z += pin.spin * deltaSeconds;
-    if (pin.group.position.y < -0.3) pin.group.visible = false;
+    pin.group.rotation.x += pin.angularVelocity.x * deltaSeconds;
+    pin.group.rotation.y += pin.angularVelocity.y * deltaSeconds;
+    pin.group.rotation.z += pin.angularVelocity.z * deltaSeconds;
+
+    if (pin.group.position.y < LANE_SURFACE_Y) {
+      pin.group.position.y = LANE_SURFACE_Y;
+      if (Math.abs(pin.velocity.y) > 0.35) pin.velocity.y *= -0.25;
+      else pin.velocity.y = 0;
+    }
+
+    const groundFriction = Math.max(0, 1 - 4 * deltaSeconds);
+    pin.velocity.x *= groundFriction;
+    pin.velocity.z *= groundFriction;
+    pin.angularVelocity.multiplyScalar(Math.max(0, 1 - 2.5 * deltaSeconds));
   }
 
   if (!ballInPlay) return;
@@ -662,6 +680,25 @@ function updateBall(deltaSeconds) {
     const distance = Math.hypot(ball.position.x - pin.group.position.x, ball.position.z - pin.group.position.z);
     if (distance < BALL_RADIUS_WORLD + PIN_HEIGHT_WORLD * 0.16) {
       knockPin(pin, ballVelocity.clone().normalize());
+    }
+  }
+
+  for (let firstIndex = 0; firstIndex < pins.length; firstIndex += 1) {
+    const firstPin = pins[firstIndex];
+    if (!firstPin.knocked) continue;
+    for (let secondIndex = firstIndex + 1; secondIndex < pins.length; secondIndex += 1) {
+      const secondPin = pins[secondIndex];
+      if (secondPin.knocked) continue;
+
+      const impactX = secondPin.group.position.x - firstPin.group.position.x;
+      const impactZ = secondPin.group.position.z - firstPin.group.position.z;
+      const impactDistance = Math.hypot(impactX, impactZ);
+      const collisionDistance = firstPin.collisionRadius + secondPin.collisionRadius;
+      if (impactDistance >= collisionDistance) continue;
+
+      const impactDirection = new THREE.Vector3(impactX, 0, impactZ);
+      if (impactDirection.lengthSq() === 0) impactDirection.set(1, 0, 0);
+      knockPin(secondPin, impactDirection.normalize());
     }
   }
 
