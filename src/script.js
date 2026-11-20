@@ -61,6 +61,8 @@ const BALL_LATERAL_SPEED = 2.5;
 const FOLLOW_CAMERA_DISTANCE = 2.2;
 const FOLLOW_CAMERA_HEIGHT = 1.1;
 const FOLLOW_CAMERA_LOOK_AHEAD = 5;
+const FOLLOW_PIN_CAMERA_DISTANCE_FEET = 45;
+const PIN_CAMERA_DISTANCE = 4.5;
 const followCameraDirection = new THREE.Vector3();
 const followCameraTarget = new THREE.Vector3();
 
@@ -519,6 +521,8 @@ let rollElapsed = 0;
 let hookDirection = 0;
 let ballSpinRadiansPerSecond = 0;
 let launchAngle = 0;
+let followBallDuringRoll = false;
+let isPinCameraActive = false;
 const ballVelocity = new THREE.Vector3();
 
 function setRollStatus(message) {
@@ -542,6 +546,8 @@ function throwBall() {
   const axisRotation = THREE.MathUtils.degToRad(ballSettings.axisRotationDegrees);
   hookDirection = -Math.sin(axisRotation);
   ballSpinRadiansPerSecond = ballSettings.revRateRpm * Math.PI * 2 / 60;
+  followBallDuringRoll = followBallToggle.checked;
+  isPinCameraActive = false;
   ballInPlay = true;
   rollElapsed = 0;
   launchGuide.visible = false;
@@ -595,13 +601,16 @@ function finishRoll() {
   ballSpinRadiansPerSecond = 0;
   ballVelocity.set(0, 0, 0);
   const knockedDown = pins.length - standingPinCount();
-  if (followBallToggle.checked && isBallView) exitBallView();
+  if (followBallDuringRoll && isBallView && !isPinCameraActive) exitBallView();
   const result = knockedDown === 10 ? "Strike!" : `${knockedDown} pin${knockedDown === 1 ? "" : "s"} down`;
   setRollStatus(`${result} Resetting…`);
   resetTimer = 2.2;
 }
 
 function resetRoll() {
+  if (followBallDuringRoll && isBallView) exitBallView();
+  followBallDuringRoll = false;
+  isPinCameraActive = false;
   ball.position.copy(BALL_FOUL_POSITION);
   ball.rotation.set(0, 0, 0);
   for (const pin of pins) {
@@ -630,6 +639,21 @@ function updateFollowBallCamera() {
   const horizontalDistance = Math.hypot(targetOffsetX, targetOffsetZ);
   yaw = Math.atan2(-targetOffsetX, -targetOffsetZ);
   pitch = -Math.atan2(camera.position.y - followCameraTarget.y, horizontalDistance);
+}
+
+function updatePinCamera() {
+  const targetY = LANE_SURFACE_Y + PIN_HEIGHT_WORLD * 0.65;
+  camera.position.set(0, PLAYER_HEIGHT_WORLD, PIN_FRONT_Z + PIN_CAMERA_DISTANCE);
+  yaw = 0;
+  pitch = -Math.atan2(camera.position.y - targetY, PIN_CAMERA_DISTANCE);
+}
+
+function arePinsSettled() {
+  return pins.every(
+    (pin) =>
+      !pin.knocked ||
+      (pin.velocity.lengthSq() < 0.01 && pin.angularVelocity.lengthSq() < 0.01)
+  );
 }
 
 function updateBall(deltaSeconds) {
@@ -673,7 +697,14 @@ function updateBall(deltaSeconds) {
     -3.5,
     3.5
   );
-  if (followBallToggle.checked && isBallView) updateFollowBallCamera();
+  if (followBallDuringRoll && isBallView) {
+    if (!isPinCameraActive && distanceFeet >= FOLLOW_PIN_CAMERA_DISTANCE_FEET) {
+      isPinCameraActive = true;
+      updatePinCamera();
+    } else if (!isPinCameraActive) {
+      updateFollowBallCamera();
+    }
+  }
 
   for (const pin of pins) {
     if (pin.knocked) continue;
@@ -829,7 +860,8 @@ function animate(currentTime = 0) {
   updateMovement(deltaSeconds);
   if (resetTimer > 0) {
     resetTimer = Math.max(0, resetTimer - deltaSeconds);
-    if (resetTimer === 0) resetRoll();
+    if (resetTimer === 0 && (!isPinCameraActive || arePinsSettled())) resetRoll();
+    else if (resetTimer === 0) resetTimer = 0.1;
   }
   updateBall(deltaSeconds);
   updateBallAim(deltaSeconds);
