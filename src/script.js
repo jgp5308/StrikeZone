@@ -59,6 +59,7 @@ const BALL_FOUL_POSITION = new THREE.Vector3(
 );
 const BALL_LATERAL_SPEED = 2.5;
 const AIM_CAMERA_LATERAL_OFFSET = 1.25;
+const AIM_CAMERA_TARGET_DISTANCE = 8;
 
 const lane = new THREE.Mesh(
   new THREE.BoxGeometry(LANE_WIDTH, 0.2, LANE_SURFACE_LENGTH_WORLD),
@@ -667,10 +668,13 @@ function updateBallAim(deltaSeconds) {
     laneEdge
   );
 
-  // Keep the player's POV centered on the launch line while aiming. The
-  // camera shifts toward the selected side and turns to look along that line.
+  // Keep the screen center aligned with the launch line while aiming. The
+  // camera shifts toward the selected side, then looks at a point farther
+  // down that same line instead of using a fixed yaw offset.
   camera.position.x = ball.position.x + Math.sin(launchAngle) * AIM_CAMERA_LATERAL_OFFSET;
-  yaw = -launchAngle;
+  const targetX = ball.position.x + Math.sin(launchAngle) * AIM_CAMERA_TARGET_DISTANCE;
+  const targetZ = ball.position.z - Math.cos(launchAngle) * AIM_CAMERA_TARGET_DISTANCE;
+  yaw = Math.atan2(camera.position.x - targetX, camera.position.z - targetZ);
 }
 
 let yaw = 0;
