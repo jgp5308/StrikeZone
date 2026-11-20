@@ -661,6 +661,7 @@ function updateBallAim(deltaSeconds) {
     -laneEdge,
     laneEdge
   );
+  camera.position.x = ball.position.x;
 
   // Aiming changes only the line angle and POV. Keep the ball and guide
   // anchored together at the ball's current position.
