@@ -601,6 +601,7 @@ patternSelect.addEventListener("change", () => loadPattern(patternSelect.value))
 patternSelect.addEventListener("click", () => loadPattern(patternSelect.value));
 let ballInPlay = false;
 let resetTimer = 0;
+let resetWaitElapsed = 0;
 let rollElapsed = 0;
 let hookDirection = 0;
 let ballSpinRadiansPerSecond = 0;
@@ -693,12 +694,14 @@ function finishRoll() {
   const result = knockedDown === 10 ? "Strike!" : `${knockedDown} pin${knockedDown === 1 ? "" : "s"} down`;
   setRollStatus(`${result} Resetting…`);
   resetTimer = 2.2;
+  resetWaitElapsed = 0;
 }
 
 function resetRoll() {
   if (followBallDuringRoll && isBallView) exitBallView();
   followBallDuringRoll = false;
   isPinCameraActive = false;
+  resetWaitElapsed = 0;
   ballPhysicsBody.setTranslation(
     { x: BALL_FOUL_POSITION.x, y: BALL_FOUL_POSITION.y, z: BALL_FOUL_POSITION.z },
     true
@@ -747,14 +750,17 @@ function updatePinCamera() {
 
 function arePinsSettled() {
   return pins.every(
-    (pin) =>
-      !pin.knocked ||
-      (pin.physicsBody.linvel().x ** 2 +
-        pin.physicsBody.linvel().y ** 2 +
-        pin.physicsBody.linvel().z ** 2 < 0.01 &&
-        pin.physicsBody.angvel().x ** 2 +
-        pin.physicsBody.angvel().y ** 2 +
-        pin.physicsBody.angvel().z ** 2 < 0.01)
+    (pin) => {
+      if (!pin.knocked) return true;
+      if (pin.physicsBody.isSleeping()) return true;
+
+      const linearVelocity = pin.physicsBody.linvel();
+      const angularVelocity = pin.physicsBody.angvel();
+      return (
+        linearVelocity.x ** 2 + linearVelocity.y ** 2 + linearVelocity.z ** 2 < 0.04 &&
+        angularVelocity.x ** 2 + angularVelocity.y ** 2 + angularVelocity.z ** 2 < 0.04
+      );
+    }
   );
 }
 
@@ -836,11 +842,17 @@ function updateBallAim(deltaSeconds) {
   if (pressedKeys.has("d")) horizontalInput += 1;
 
   const laneEdge = LANE_WIDTH / 2 - BALL_RADIUS_WORLD;
-  ball.position.x = THREE.MathUtils.clamp(
-    ball.position.x + horizontalInput * BALL_LATERAL_SPEED * deltaSeconds,
+  const ballTranslation = ballPhysicsBody.translation();
+  const nextBallX = THREE.MathUtils.clamp(
+    ballTranslation.x + horizontalInput * BALL_LATERAL_SPEED * deltaSeconds,
     -laneEdge,
     laneEdge
   );
+  ballPhysicsBody.setTranslation(
+    { x: nextBallX, y: ballTranslation.y, z: ballTranslation.z },
+    true
+  );
+  ball.position.x = nextBallX;
   camera.position.x = ball.position.x;
 
   // Aiming changes only the line angle and POV. Keep the ball and guide
@@ -946,8 +958,14 @@ function animate(currentTime = 0) {
   updateMovement(deltaSeconds);
   if (resetTimer > 0) {
     resetTimer = Math.max(0, resetTimer - deltaSeconds);
-    if (resetTimer === 0 && (!isPinCameraActive || arePinsSettled())) resetRoll();
-    else if (resetTimer === 0) resetTimer = 0.1;
+    if (resetTimer === 0) {
+      resetWaitElapsed += deltaSeconds;
+      if (!isPinCameraActive || arePinsSettled() || resetWaitElapsed >= 4) {
+        resetRoll();
+      } else {
+        resetTimer = 0.1;
+      }
+    }
   }
   updateBall(deltaSeconds);
   updateBallAim(deltaSeconds);
