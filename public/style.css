@@ -123,7 +123,8 @@ canvas {
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
 }
 
-#oil-toggle {
+#oil-toggle,
+#follow-ball-toggle {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -136,14 +137,20 @@ canvas {
   user-select: none;
 }
 
-#oil-toggle input {
+#oil-toggle input,
+#follow-ball-toggle input {
   position: absolute;
   opacity: 0;
   pointer-events: none;
 }
 
-#oil-toggle > span {
+#oil-toggle > span,
+#follow-ball-toggle > span {
   pointer-events: none;
+}
+
+#follow-ball-toggle {
+  margin-top: 0;
 }
 
 .toggle-track {
@@ -167,12 +174,14 @@ canvas {
   transition: transform 160ms ease, background 160ms ease;
 }
 
-#oil-toggle input:checked + .toggle-track {
+#oil-toggle input:checked + .toggle-track,
+#follow-ball-toggle input:checked + .toggle-track {
   border-color: #7dd3fc;
   background: #075985;
 }
 
-#oil-toggle input:checked + .toggle-track span {
+#oil-toggle input:checked + .toggle-track span,
+#follow-ball-toggle input:checked + .toggle-track span {
   transform: translateX(16px);
   background: #e0f2fe;
 }

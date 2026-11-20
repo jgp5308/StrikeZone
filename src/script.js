@@ -58,6 +58,11 @@ const BALL_FOUL_POSITION = new THREE.Vector3(
   LANE_FRONT_Z
 );
 const BALL_LATERAL_SPEED = 2.5;
+const FOLLOW_CAMERA_DISTANCE = 2.2;
+const FOLLOW_CAMERA_HEIGHT = 1.1;
+const FOLLOW_CAMERA_LOOK_AHEAD = 5;
+const followCameraDirection = new THREE.Vector3();
+const followCameraTarget = new THREE.Vector3();
 
 const lane = new THREE.Mesh(
   new THREE.BoxGeometry(LANE_WIDTH, 0.2, LANE_SURFACE_LENGTH_WORLD),
@@ -447,6 +452,7 @@ function updateBallHighlight() {
 const rollStatus = document.querySelector("#roll-status");
 const aimControls = document.querySelector("#aim-controls");
 const oilToggle = document.querySelector("#oil-toggle input");
+const followBallToggle = document.querySelector("#follow-ball-toggle input");
 const patternSelect = document.querySelector("#pattern-select");
 const ballSpeedInput = document.querySelector("#ball-speed");
 const revRateInput = document.querySelector("#rev-rate");
@@ -584,6 +590,7 @@ function finishRoll() {
   ballSpinRadiansPerSecond = 0;
   ballVelocity.set(0, 0, 0);
   const knockedDown = pins.length - standingPinCount();
+  if (followBallToggle.checked && isBallView) exitBallView();
   const result = knockedDown === 10 ? "Strike!" : `${knockedDown} pin${knockedDown === 1 ? "" : "s"} down`;
   setRollStatus(`${result} Resetting…`);
   resetTimer = 2.2;
@@ -600,6 +607,23 @@ function resetRoll() {
     pin.group.visible = true;
   }
   setRollStatus("Ready to roll");
+}
+
+function updateFollowBallCamera() {
+  followCameraDirection.copy(ballVelocity);
+  followCameraDirection.y = 0;
+  if (followCameraDirection.lengthSq() === 0) return;
+  followCameraDirection.normalize();
+
+  camera.position.copy(ball.position).addScaledVector(followCameraDirection, -FOLLOW_CAMERA_DISTANCE);
+  camera.position.y = ball.position.y + FOLLOW_CAMERA_HEIGHT;
+  followCameraTarget.copy(ball.position).addScaledVector(followCameraDirection, FOLLOW_CAMERA_LOOK_AHEAD);
+
+  const targetOffsetX = followCameraTarget.x - camera.position.x;
+  const targetOffsetZ = followCameraTarget.z - camera.position.z;
+  const horizontalDistance = Math.hypot(targetOffsetX, targetOffsetZ);
+  yaw = Math.atan2(-targetOffsetX, -targetOffsetZ);
+  pitch = -Math.atan2(camera.position.y - followCameraTarget.y, horizontalDistance);
 }
 
 function updateBall(deltaSeconds) {
@@ -631,6 +655,7 @@ function updateBall(deltaSeconds) {
     -3.5,
     3.5
   );
+  if (followBallToggle.checked && isBallView) updateFollowBallCamera();
 
   for (const pin of pins) {
     if (pin.knocked) continue;
