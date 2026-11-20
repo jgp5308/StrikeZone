@@ -58,7 +58,8 @@ const BALL_FOUL_POSITION = new THREE.Vector3(
   LANE_FRONT_Z
 );
 const BALL_LATERAL_SPEED = 2.5;
-const AIM_CAMERA_TARGET_DISTANCE = 8;
+const AIM_CAMERA_ORBIT_RADIUS = 1.4;
+const AIM_CAMERA_HEIGHT = 1.1;
 
 const lane = new THREE.Mesh(
   new THREE.BoxGeometry(LANE_WIDTH, 0.2, LANE_SURFACE_LENGTH_WORLD),
@@ -669,12 +670,15 @@ function updateBallAim(deltaSeconds) {
   launchGuide.rotation.y = -launchAngle;
   launchGuide.visible = true;
 
-  // Keep the ball centered in the screen. Only rotate the camera toward a
-  // point farther down the launch line; never shift the camera sideways.
-  camera.position.x = ball.position.x;
-  const targetX = ball.position.x + Math.sin(launchAngle) * AIM_CAMERA_TARGET_DISTANCE;
-  const targetZ = ball.position.z - Math.cos(launchAngle) * AIM_CAMERA_TARGET_DISTANCE;
-  yaw = Math.atan2(camera.position.x - targetX, camera.position.z - targetZ);
+  // Orbit around the ball so the ball stays centered while the player's POV
+  // turns with the launch line. The orbit uses the ball's center as its axis.
+  camera.position.set(
+    ball.position.x + Math.sin(launchAngle) * AIM_CAMERA_ORBIT_RADIUS,
+    ball.position.y + AIM_CAMERA_HEIGHT,
+    ball.position.z + Math.cos(launchAngle) * AIM_CAMERA_ORBIT_RADIUS
+  );
+  yaw = launchAngle;
+  pitch = -Math.atan2(AIM_CAMERA_HEIGHT, AIM_CAMERA_ORBIT_RADIUS);
 }
 
 let yaw = 0;
