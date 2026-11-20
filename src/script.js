@@ -426,11 +426,11 @@ function addBallHole(normal, radius) {
 }
 
 // One thumb hole above two close finger holes, roughly 3 inches lower.
-// The hole group starts on the back of the ball and rotates toward the right
-// side with the axis-rotation setting.
-addBallHole(new THREE.Vector3(0, 0.98, -0.18), BALL_RADIUS_WORLD * 0.17);
-addBallHole(new THREE.Vector3(-0.16, 0.35, -0.92), BALL_RADIUS_WORLD * 0.12);
-addBallHole(new THREE.Vector3(0.16, 0.35, -0.92), BALL_RADIUS_WORLD * 0.12);
+// The holes face the player and rotate toward the right side with the
+// axis-rotation setting.
+addBallHole(new THREE.Vector3(0, 0.98, 0.18), BALL_RADIUS_WORLD * 0.17);
+addBallHole(new THREE.Vector3(-0.16, 0.35, 0.92), BALL_RADIUS_WORLD * 0.12);
+addBallHole(new THREE.Vector3(0.16, 0.35, 0.92), BALL_RADIUS_WORLD * 0.12);
 
 const aimRaycaster = new THREE.Raycaster();
 const screenCenter = new THREE.Vector2(0, 0);
@@ -462,8 +462,8 @@ const ballSettings = {
 };
 
 function updateBallHoleRotation() {
-  // Negative Y rotation moves the back of the ball toward the player's right.
-  ballHoleGroup.rotation.y = -THREE.MathUtils.degToRad(ballSettings.axisRotationDegrees);
+  // Positive Y rotation moves the player-facing holes toward the right.
+  ballHoleGroup.rotation.y = THREE.MathUtils.degToRad(ballSettings.axisRotationDegrees);
 }
 
 function updateBallSettings() {
