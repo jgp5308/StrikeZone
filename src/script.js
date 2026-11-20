@@ -653,10 +653,6 @@ function updateBallAim(deltaSeconds) {
   launchAngle += aimInput * 0.35 * deltaSeconds;
   launchAngle = THREE.MathUtils.clamp(launchAngle, -0.8, 0.8);
 
-  launchGuide.position.set(ball.position.x, LANE_SURFACE_Y + 0.125, ball.position.z);
-  launchGuide.rotation.y = -launchAngle;
-  launchGuide.visible = true;
-
   let horizontalInput = 0;
   if (pressedKeys.has("a")) horizontalInput -= 1;
   if (pressedKeys.has("d")) horizontalInput += 1;
@@ -667,6 +663,12 @@ function updateBallAim(deltaSeconds) {
     -laneEdge,
     laneEdge
   );
+
+  // Aiming changes only the line angle and POV. Keep the ball and guide
+  // anchored together at the ball's current position.
+  launchGuide.position.set(ball.position.x, LANE_SURFACE_Y + 0.125, ball.position.z);
+  launchGuide.rotation.y = -launchAngle;
+  launchGuide.visible = true;
 
   // Keep the screen center aligned with the launch line while aiming. The
   // camera shifts toward the selected side, then looks at a point farther
