@@ -51,6 +51,14 @@ const PIN_SPACING_WORLD = (PIN_SPACING_INCHES / 12) * WORLD_UNITS_PER_FOOT;
 const BALL_DIAMETER_INCHES = LANE_DESIGN.ballDiameterInches;
 const BALL_DIAMETER_WORLD = (BALL_DIAMETER_INCHES / 12) * WORLD_UNITS_PER_FOOT;
 const BALL_RADIUS_WORLD = BALL_DIAMETER_WORLD / 2;
+const BALL_MASS_KG = 7.26;
+const PIN_MASS_KG = 1.53;
+const PIN_CENTER_OF_MASS_RATIO = 0.58;
+const PIN_DECK_RESTITUTION = 0.12;
+const PIN_PIN_RESTITUTION = 0.24;
+const BALL_PIN_RESTITUTION = 0.18;
+const DECK_FRICTION = 3.2;
+const AIR_DRAG = 0.08;
 const BALL_START_POSITION = new THREE.Vector3(0, LANE_SURFACE_Y + BALL_RADIUS_WORLD, 5.5);
 const BALL_FOUL_POSITION = new THREE.Vector3(
   0,
@@ -302,6 +310,10 @@ function createPin(x, z) {
     group: pin,
     origin: new THREE.Vector3(x, LANE_SURFACE_Y, z),
     knocked: false,
+    mass: PIN_MASS_KG,
+    inverseMass: 1 / PIN_MASS_KG,
+    centerOfMassHeight: PIN_HEIGHT_WORLD * PIN_CENTER_OF_MASS_RATIO,
+    momentOfInertia: PIN_MASS_KG * PIN_HEIGHT_WORLD ** 2 / 3,
     velocity: new THREE.Vector3(),
     angularVelocity: new THREE.Vector3(),
     collisionRadius: PIN_HEIGHT_WORLD * 0.16,
@@ -584,15 +596,19 @@ function exitBallView() {
   setRollStatus(ballInPlay ? "Rolling…" : "Ready to roll");
 }
 
-function knockPin(pin, direction) {
+function activatePin(pin) {
   pin.knocked = true;
-  const impactDirection = direction.clone();
-  impactDirection.y = 0;
-  if (impactDirection.lengthSq() === 0) impactDirection.set(0, 0, -1);
-  impactDirection.normalize();
-  pin.velocity.addScaledVector(impactDirection, 2.2);
-  pin.velocity.y = Math.max(pin.velocity.y, 2.4);
-  pin.angularVelocity.set(-impactDirection.z * 8, 0, impactDirection.x * 8);
+}
+
+function applyPinImpulse(pin, impulseX, impulseZ) {
+  activatePin(pin);
+  pin.velocity.x += impulseX * pin.inverseMass;
+  pin.velocity.z += impulseZ * pin.inverseMass;
+
+  // Apply the impulse at deck height below the pin's center of mass so a
+  // side impact naturally produces a tipping torque.
+  pin.angularVelocity.x += pin.centerOfMassHeight * impulseZ / pin.momentOfInertia;
+  pin.angularVelocity.z -= pin.centerOfMassHeight * impulseX / pin.momentOfInertia;
 }
 
 function finishRoll() {
@@ -657,6 +673,36 @@ function arePinsSettled() {
   );
 }
 
+function resolveBallPinCollision(pin) {
+  const offsetX = pin.group.position.x - ball.position.x;
+  const offsetZ = pin.group.position.z - ball.position.z;
+  const distance = Math.hypot(offsetX, offsetZ);
+  const collisionDistance = BALL_RADIUS_WORLD + pin.collisionRadius;
+  if (distance >= collisionDistance) return;
+
+  const normalX = distance > 0 ? offsetX / distance : 0;
+  const normalZ = distance > 0 ? offsetZ / distance : -1;
+  const overlap = collisionDistance - distance;
+  const ballInverseMass = 1 / BALL_MASS_KG;
+  const inverseMassTotal = ballInverseMass + pin.inverseMass;
+
+  // Correct penetration using the two bodies' inverse masses.
+  ball.position.x -= normalX * overlap * pin.inverseMass / inverseMassTotal;
+  ball.position.z -= normalZ * overlap * pin.inverseMass / inverseMassTotal;
+  pin.group.position.x += normalX * overlap * ballInverseMass / inverseMassTotal;
+  pin.group.position.z += normalZ * overlap * ballInverseMass / inverseMassTotal;
+
+  const relativeVelocityX = pin.velocity.x - ballVelocity.x;
+  const relativeVelocityZ = pin.velocity.z - ballVelocity.z;
+  const velocityAlongNormal = relativeVelocityX * normalX + relativeVelocityZ * normalZ;
+  if (velocityAlongNormal >= 0) return;
+
+  const impulse = -(1 + BALL_PIN_RESTITUTION) * velocityAlongNormal / inverseMassTotal;
+  ballVelocity.x -= normalX * impulse * ballInverseMass;
+  ballVelocity.z -= normalZ * impulse * ballInverseMass;
+  applyPinImpulse(pin, normalX * impulse, normalZ * impulse);
+}
+
 function resolvePinCollisions() {
   for (let firstIndex = 0; firstIndex < pins.length; firstIndex += 1) {
     const firstPin = pins[firstIndex];
@@ -673,11 +719,8 @@ function resolvePinCollisions() {
       const normalX = distance > 0 ? offsetX / distance : 1;
       const normalZ = distance > 0 ? offsetZ / distance : 0;
       const overlap = collisionDistance - distance;
-      const firstWasKnocked = firstPin.knocked;
-      const secondWasKnocked = secondPin.knocked;
-
-      if (!firstWasKnocked) knockPin(firstPin, new THREE.Vector3(-normalX, 0, -normalZ));
-      if (!secondWasKnocked) knockPin(secondPin, new THREE.Vector3(normalX, 0, normalZ));
+      if (!firstPin.knocked) activatePin(firstPin);
+      if (!secondPin.knocked) activatePin(secondPin);
 
       // Separate overlapping pin bodies so they do not remain interpenetrating.
       firstPin.group.position.x -= normalX * overlap * 0.5;
@@ -690,11 +733,10 @@ function resolvePinCollisions() {
       const velocityAlongNormal = relativeVelocityX * normalX + relativeVelocityZ * normalZ;
       if (velocityAlongNormal >= 0) continue;
 
-      const impulse = -(1 + PIN_RESTITUTION) * velocityAlongNormal * 0.5;
-      firstPin.velocity.x -= normalX * impulse;
-      firstPin.velocity.z -= normalZ * impulse;
-      secondPin.velocity.x += normalX * impulse;
-      secondPin.velocity.z += normalZ * impulse;
+      const inverseMassTotal = firstPin.inverseMass + secondPin.inverseMass;
+      const impulse = -(1 + PIN_PIN_RESTITUTION) * velocityAlongNormal / inverseMassTotal;
+      applyPinImpulse(firstPin, -normalX * impulse, -normalZ * impulse);
+      applyPinImpulse(secondPin, normalX * impulse, normalZ * impulse);
     }
   }
 }
@@ -703,6 +745,7 @@ function updateBall(deltaSeconds) {
   for (const pin of pins) {
     if (!pin.knocked) continue;
     pin.velocity.y -= 7 * deltaSeconds;
+    pin.velocity.multiplyScalar(Math.exp(-AIR_DRAG * deltaSeconds));
     pin.group.position.addScaledVector(pin.velocity, deltaSeconds);
     pin.group.rotation.x += pin.angularVelocity.x * deltaSeconds;
     pin.group.rotation.y += pin.angularVelocity.y * deltaSeconds;
@@ -710,11 +753,11 @@ function updateBall(deltaSeconds) {
 
     if (pin.group.position.y < LANE_SURFACE_Y) {
       pin.group.position.y = LANE_SURFACE_Y;
-      if (Math.abs(pin.velocity.y) > 0.35) pin.velocity.y *= -0.25;
+      if (Math.abs(pin.velocity.y) > 0.35) pin.velocity.y *= -PIN_DECK_RESTITUTION;
       else pin.velocity.y = 0;
     }
 
-    const groundFriction = Math.max(0, 1 - 4 * deltaSeconds);
+    const groundFriction = Math.exp(-DECK_FRICTION * deltaSeconds);
     pin.velocity.x *= groundFriction;
     pin.velocity.z *= groundFriction;
     pin.angularVelocity.multiplyScalar(Math.max(0, 1 - 2.5 * deltaSeconds));
@@ -749,13 +792,7 @@ function updateBall(deltaSeconds) {
     }
   }
 
-  for (const pin of pins) {
-    if (pin.knocked) continue;
-    const distance = Math.hypot(ball.position.x - pin.group.position.x, ball.position.z - pin.group.position.z);
-    if (distance < BALL_RADIUS_WORLD + PIN_HEIGHT_WORLD * 0.16) {
-      knockPin(pin, ballVelocity.clone().normalize());
-    }
-  }
+  for (const pin of pins) resolveBallPinCollision(pin);
 
   resolvePinCollisions();
 
