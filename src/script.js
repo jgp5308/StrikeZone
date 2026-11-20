@@ -58,10 +58,6 @@ const BALL_FOUL_POSITION = new THREE.Vector3(
   LANE_FRONT_Z
 );
 const BALL_LATERAL_SPEED = 2.5;
-const AIM_CAMERA_ORBIT_RADIUS = 1.4;
-const AIM_CAMERA_HEIGHT = 1.1;
-const AIM_CAMERA_SMOOTHING = 8;
-const desiredAimCameraPosition = new THREE.Vector3();
 
 const lane = new THREE.Mesh(
   new THREE.BoxGeometry(LANE_WIDTH, 0.2, LANE_SURFACE_LENGTH_WORLD),
@@ -665,29 +661,13 @@ function updateBallAim(deltaSeconds) {
     -laneEdge,
     laneEdge
   );
-  // Keep the ball and guide anchored together at the ball's current position.
+  camera.position.x = ball.position.x;
+
+  // Aiming changes only the line angle and POV. Keep the ball and guide
+  // anchored together at the ball's current position.
   launchGuide.position.set(ball.position.x, LANE_SURFACE_Y + 0.125, ball.position.z);
   launchGuide.rotation.y = -launchAngle;
   launchGuide.visible = true;
-
-  // Orbit smoothly around the ball at a fixed height and distance. Looking
-  // back at the ball keeps it in the same camera position while the moderate
-  // orbit keeps the pins visible as much as possible.
-  desiredAimCameraPosition.set(
-    ball.position.x + Math.sin(launchAngle) * AIM_CAMERA_ORBIT_RADIUS,
-    ball.position.y + AIM_CAMERA_HEIGHT,
-    ball.position.z + Math.cos(launchAngle) * AIM_CAMERA_ORBIT_RADIUS
-  );
-  const smoothing = 1 - Math.exp(-AIM_CAMERA_SMOOTHING * deltaSeconds);
-  camera.position.lerp(desiredAimCameraPosition, smoothing);
-
-  const cameraHeight = camera.position.y - ball.position.y;
-  const cameraDistance = Math.hypot(
-    camera.position.x - ball.position.x,
-    camera.position.z - ball.position.z
-  );
-  yaw = Math.atan2(camera.position.x - ball.position.x, camera.position.z - ball.position.z);
-  pitch = -Math.atan2(cameraHeight, cameraDistance);
 
 }
 
