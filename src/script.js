@@ -410,6 +410,9 @@ const ballHoleMaterial = new THREE.MeshStandardMaterial({
   metalness: 0,
 });
 
+const ballHoleGroup = new THREE.Group();
+ball.add(ballHoleGroup);
+
 function addBallHole(normal, radius) {
   const surfaceNormal = normal.normalize();
   const hole = new THREE.Mesh(
@@ -419,13 +422,15 @@ function addBallHole(normal, radius) {
   hole.position.copy(surfaceNormal).multiplyScalar(BALL_RADIUS_WORLD * 0.997);
   hole.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), surfaceNormal);
   hole.castShadow = true;
-  ball.add(hole);
+  ballHoleGroup.add(hole);
 }
 
 // One thumb hole above two close finger holes, roughly 3 inches lower.
-addBallHole(new THREE.Vector3(0, 0.98, 0.18), BALL_RADIUS_WORLD * 0.17);
-addBallHole(new THREE.Vector3(-0.16, 0.35, 0.92), BALL_RADIUS_WORLD * 0.12);
-addBallHole(new THREE.Vector3(0.16, 0.35, 0.92), BALL_RADIUS_WORLD * 0.12);
+// The hole group starts on the back of the ball and rotates toward the right
+// side with the axis-rotation setting.
+addBallHole(new THREE.Vector3(0, 0.98, -0.18), BALL_RADIUS_WORLD * 0.17);
+addBallHole(new THREE.Vector3(-0.16, 0.35, -0.92), BALL_RADIUS_WORLD * 0.12);
+addBallHole(new THREE.Vector3(0.16, 0.35, -0.92), BALL_RADIUS_WORLD * 0.12);
 
 const aimRaycaster = new THREE.Raycaster();
 const screenCenter = new THREE.Vector2(0, 0);
@@ -456,10 +461,15 @@ const ballSettings = {
   axisRotationDegrees: Number(axisRotationInput.value),
 };
 
+function updateBallHoleRotation() {
+  ballHoleGroup.rotation.y = THREE.MathUtils.degToRad(ballSettings.axisRotationDegrees);
+}
+
 function updateBallSettings() {
   ballSettings.speedMph = Number(ballSpeedInput.value);
   ballSettings.revRateRpm = Number(revRateInput.value);
   ballSettings.axisRotationDegrees = Number(axisRotationInput.value);
+  updateBallHoleRotation();
   ballSpeedValue.textContent = `${ballSettings.speedMph} MPH`;
   revRateValue.textContent = `${ballSettings.revRateRpm} RPM`;
   axisRotationValue.textContent = `${ballSettings.axisRotationDegrees}°`;
