@@ -462,7 +462,8 @@ const ballSettings = {
 };
 
 function updateBallHoleRotation() {
-  ballHoleGroup.rotation.y = THREE.MathUtils.degToRad(ballSettings.axisRotationDegrees);
+  // Negative Y rotation moves the back of the ball toward the player's right.
+  ballHoleGroup.rotation.y = -THREE.MathUtils.degToRad(ballSettings.axisRotationDegrees);
 }
 
 function updateBallSettings() {
