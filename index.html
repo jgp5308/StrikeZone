@@ -20,6 +20,9 @@
       <h1>StrikeZone</h1>
       <p>Click the lane to look around • W A S D to move • Arrow keys to aim</p>
       <div id="roll-status" aria-live="polite">Ready to roll</div>
+      <details id="settings-menu">
+        <summary>Settings</summary>
+        <div class="settings-content">
       <label id="oil-toggle">
         <input type="checkbox" />
         <span class="toggle-track" aria-hidden="true"><span></span></span>
@@ -44,6 +47,8 @@
         <div class="ball-setting">
           <label for="axis-rotation">Axis Rotation <output id="axis-rotation-value">45°</output></label>
           <input id="axis-rotation" type="range" min="0" max="90" step="1" value="45" />
+        </div>
+      </details>
         </div>
       </details>
     </div>
