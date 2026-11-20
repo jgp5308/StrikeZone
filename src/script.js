@@ -58,6 +58,7 @@ const BALL_FOUL_POSITION = new THREE.Vector3(
   LANE_FRONT_Z
 );
 const BALL_LATERAL_SPEED = 2.5;
+const AIM_CAMERA_LATERAL_OFFSET = 1.25;
 
 const lane = new THREE.Mesh(
   new THREE.BoxGeometry(LANE_WIDTH, 0.2, LANE_SURFACE_LENGTH_WORLD),
@@ -658,7 +659,6 @@ function updateBallAim(deltaSeconds) {
   let horizontalInput = 0;
   if (pressedKeys.has("a")) horizontalInput -= 1;
   if (pressedKeys.has("d")) horizontalInput += 1;
-  if (horizontalInput === 0) return;
 
   const laneEdge = LANE_WIDTH / 2 - BALL_RADIUS_WORLD;
   ball.position.x = THREE.MathUtils.clamp(
@@ -666,7 +666,11 @@ function updateBallAim(deltaSeconds) {
     -laneEdge,
     laneEdge
   );
-  camera.position.x = ball.position.x;
+
+  // Keep the player's POV centered on the launch line while aiming. The
+  // camera shifts toward the selected side and turns to look along that line.
+  camera.position.x = ball.position.x + Math.sin(launchAngle) * AIM_CAMERA_LATERAL_OFFSET;
+  yaw = -launchAngle;
 }
 
 let yaw = 0;
