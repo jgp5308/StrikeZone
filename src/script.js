@@ -454,6 +454,7 @@ const axisRotationInput = document.querySelector("#axis-rotation");
 const ballSpeedValue = document.querySelector("#ball-speed-value");
 const revRateValue = document.querySelector("#rev-rate-value");
 const axisRotationValue = document.querySelector("#axis-rotation-value");
+const settingsMenu = document.querySelector("#settings-menu");
 
 const ballSettings = {
   speedMph: Number(ballSpeedInput.value),
@@ -688,6 +689,11 @@ window.addEventListener("keydown", (event) => {
   if (key === " ") {
     event.preventDefault();
     throwBall();
+    return;
+  }
+  if (key === "-") {
+    event.preventDefault();
+    settingsMenu.open = !settingsMenu.open;
     return;
   }
   if (key === "arrowleft" || key === "arrowright") {
