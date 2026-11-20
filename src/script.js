@@ -63,6 +63,7 @@ const FOLLOW_CAMERA_HEIGHT = 1.1;
 const FOLLOW_CAMERA_LOOK_AHEAD = 5;
 const FOLLOW_PIN_CAMERA_DISTANCE_FEET = 45;
 const PIN_CAMERA_DISTANCE = 4.5;
+const PIN_RESTITUTION = 0.28;
 const followCameraDirection = new THREE.Vector3();
 const followCameraTarget = new THREE.Vector3();
 
@@ -656,6 +657,48 @@ function arePinsSettled() {
   );
 }
 
+function resolvePinCollisions() {
+  for (let firstIndex = 0; firstIndex < pins.length; firstIndex += 1) {
+    const firstPin = pins[firstIndex];
+    for (let secondIndex = firstIndex + 1; secondIndex < pins.length; secondIndex += 1) {
+      const secondPin = pins[secondIndex];
+      if (!firstPin.knocked && !secondPin.knocked) continue;
+
+      const offsetX = secondPin.group.position.x - firstPin.group.position.x;
+      const offsetZ = secondPin.group.position.z - firstPin.group.position.z;
+      const distance = Math.hypot(offsetX, offsetZ);
+      const collisionDistance = firstPin.collisionRadius + secondPin.collisionRadius;
+      if (distance >= collisionDistance) continue;
+
+      const normalX = distance > 0 ? offsetX / distance : 1;
+      const normalZ = distance > 0 ? offsetZ / distance : 0;
+      const overlap = collisionDistance - distance;
+      const firstWasKnocked = firstPin.knocked;
+      const secondWasKnocked = secondPin.knocked;
+
+      if (!firstWasKnocked) knockPin(firstPin, new THREE.Vector3(-normalX, 0, -normalZ));
+      if (!secondWasKnocked) knockPin(secondPin, new THREE.Vector3(normalX, 0, normalZ));
+
+      // Separate overlapping pin bodies so they do not remain interpenetrating.
+      firstPin.group.position.x -= normalX * overlap * 0.5;
+      firstPin.group.position.z -= normalZ * overlap * 0.5;
+      secondPin.group.position.x += normalX * overlap * 0.5;
+      secondPin.group.position.z += normalZ * overlap * 0.5;
+
+      const relativeVelocityX = secondPin.velocity.x - firstPin.velocity.x;
+      const relativeVelocityZ = secondPin.velocity.z - firstPin.velocity.z;
+      const velocityAlongNormal = relativeVelocityX * normalX + relativeVelocityZ * normalZ;
+      if (velocityAlongNormal >= 0) continue;
+
+      const impulse = -(1 + PIN_RESTITUTION) * velocityAlongNormal * 0.5;
+      firstPin.velocity.x -= normalX * impulse;
+      firstPin.velocity.z -= normalZ * impulse;
+      secondPin.velocity.x += normalX * impulse;
+      secondPin.velocity.z += normalZ * impulse;
+    }
+  }
+}
+
 function updateBall(deltaSeconds) {
   for (const pin of pins) {
     if (!pin.knocked) continue;
@@ -714,24 +757,7 @@ function updateBall(deltaSeconds) {
     }
   }
 
-  for (let firstIndex = 0; firstIndex < pins.length; firstIndex += 1) {
-    const firstPin = pins[firstIndex];
-    if (!firstPin.knocked) continue;
-    for (let secondIndex = firstIndex + 1; secondIndex < pins.length; secondIndex += 1) {
-      const secondPin = pins[secondIndex];
-      if (secondPin.knocked) continue;
-
-      const impactX = secondPin.group.position.x - firstPin.group.position.x;
-      const impactZ = secondPin.group.position.z - firstPin.group.position.z;
-      const impactDistance = Math.hypot(impactX, impactZ);
-      const collisionDistance = firstPin.collisionRadius + secondPin.collisionRadius;
-      if (impactDistance >= collisionDistance) continue;
-
-      const impactDirection = new THREE.Vector3(impactX, 0, impactZ);
-      if (impactDirection.lengthSq() === 0) impactDirection.set(1, 0, 0);
-      knockPin(secondPin, impactDirection.normalize());
-    }
-  }
+  resolvePinCollisions();
 
   if (ball.position.z < PIN_FRONT_Z - PIN_SPACING_WORLD * 4 || rollElapsed > 5) finishRoll();
 }
