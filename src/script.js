@@ -609,7 +609,8 @@ let launchAngle = 0;
 let followBallDuringRoll = false;
 let isPinCameraActive = false;
 const ballVelocity = new THREE.Vector3();
-const RESET_DELAY_SECONDS = 0.4;
+const FOLLOW_RESET_DELAY_SECONDS = 0.4;
+const NORMAL_RESET_DELAY_SECONDS = 1.2;
 const PIN_SETTLE_GRACE_SECONDS = 0.4;
 syncPhysicsToScene();
 
@@ -691,7 +692,9 @@ function finishRoll() {
   if (followBallDuringRoll && isBallView && !isPinCameraActive) exitBallView();
   const result = knockedDown === 10 ? "Strike!" : `${knockedDown} pin${knockedDown === 1 ? "" : "s"} down`;
   setRollStatus(`${result} Resetting…`);
-  resetTimer = RESET_DELAY_SECONDS;
+  resetTimer = followBallDuringRoll
+    ? FOLLOW_RESET_DELAY_SECONDS
+    : NORMAL_RESET_DELAY_SECONDS;
   resetWaitElapsed = 0;
 }
 
