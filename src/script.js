@@ -609,6 +609,8 @@ let launchAngle = 0;
 let followBallDuringRoll = false;
 let isPinCameraActive = false;
 const ballVelocity = new THREE.Vector3();
+const RESET_DELAY_SECONDS = 0.4;
+const PIN_SETTLE_GRACE_SECONDS = 0.4;
 syncPhysicsToScene();
 
 function setRollStatus(message) {
@@ -629,10 +631,6 @@ function throwBall() {
   ).normalize();
   const speedWorldUnitsPerSecond = ballSettings.speedMph * 5280 / 3600 * WORLD_UNITS_PER_FOOT;
   ballVelocity.copy(direction).multiplyScalar(speedWorldUnitsPerSecond);
-  ballPhysicsBody.setTranslation(
-    { x: BALL_FOUL_POSITION.x, y: BALL_FOUL_POSITION.y, z: BALL_FOUL_POSITION.z },
-    true
-  );
   ballPhysicsBody.setLinvel({ x: ballVelocity.x, y: 0, z: ballVelocity.z }, true);
   const axisRotation = THREE.MathUtils.degToRad(ballSettings.axisRotationDegrees);
   hookDirection = -Math.sin(axisRotation);
@@ -693,7 +691,7 @@ function finishRoll() {
   if (followBallDuringRoll && isBallView && !isPinCameraActive) exitBallView();
   const result = knockedDown === 10 ? "Strike!" : `${knockedDown} pin${knockedDown === 1 ? "" : "s"} down`;
   setRollStatus(`${result} Resetting…`);
-  resetTimer = 2.2;
+  resetTimer = RESET_DELAY_SECONDS;
   resetWaitElapsed = 0;
 }
 
@@ -960,7 +958,7 @@ function animate(currentTime = 0) {
     resetTimer = Math.max(0, resetTimer - deltaSeconds);
     if (resetTimer === 0) {
       resetWaitElapsed += deltaSeconds;
-      if (!isPinCameraActive || arePinsSettled() || resetWaitElapsed >= 4) {
+      if (!isPinCameraActive || arePinsSettled() || resetWaitElapsed >= PIN_SETTLE_GRACE_SECONDS) {
         resetRoll();
       } else {
         resetTimer = 0.1;
