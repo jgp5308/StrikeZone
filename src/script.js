@@ -79,7 +79,7 @@ const BALL_FOUL_POSITION = new THREE.Vector3(
   LANE_SURFACE_Y + BALL_RADIUS_WORLD,
   LANE_FRONT_Z
 );
-const BALL_LATERAL_SPEED = 2.5;
+const BALL_LATERAL_SPEED = 1.5;
 const FOLLOW_CAMERA_DISTANCE = 2.2;
 const FOLLOW_CAMERA_HEIGHT = 1.1;
 const FOLLOW_CAMERA_LOOK_AHEAD = 5;
@@ -916,8 +916,8 @@ document.addEventListener("pointerlockchange", () => {
 
 document.addEventListener("mousemove", (event) => {
   if (!isLooking || isBallView) return;
-  yaw -= event.movementX * 0.002;
-  pitch -= event.movementY * 0.002;
+  yaw -= event.movementX * 0.0015;
+  pitch -= event.movementY * 0.0015;
   pitch = THREE.MathUtils.clamp(pitch, -0.8, 0.5);
 });
 
