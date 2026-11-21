@@ -835,7 +835,7 @@ function updateBallAim(deltaSeconds) {
   let aimInput = 0;
   if (pressedKeys.has("arrowleft")) aimInput -= 1;
   if (pressedKeys.has("arrowright")) aimInput += 1;
-  launchAngle += aimInput * 0.35 * deltaSeconds;
+  launchAngle += aimInput * 0.25 * deltaSeconds;
   launchAngle = THREE.MathUtils.clamp(launchAngle, -0.8, 0.8);
 
   let horizontalInput = 0;
