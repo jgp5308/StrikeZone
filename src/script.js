@@ -958,7 +958,7 @@ function animate(currentTime = 0) {
     resetTimer = Math.max(0, resetTimer - deltaSeconds);
     if (resetTimer === 0) {
       resetWaitElapsed += deltaSeconds;
-      if (arePinsSettled() || resetWaitElapsed >= PIN_SETTLE_GRACE_SECONDS) {
+      if (resetWaitElapsed >= PIN_SETTLE_GRACE_SECONDS) {
         resetRoll();
       } else {
         resetTimer = 0.1;
