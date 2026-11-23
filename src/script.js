@@ -838,10 +838,16 @@ function finishRoll() {
   ballPhysicsBody.setLinvel({ x: 0, y: 0, z: 0 }, true);
   ballPhysicsBody.setAngvel({ x: 0, y: 0, z: 0 }, true);
   const knockedDown = pins.length - standingPinCount();
-  shotsThisFrame += 1;
-  frameCompleteAfterRoll = standingPinCount() === 0 || shotsThisFrame >= 2;
+  const shotNumber = shotsThisFrame + 1;
+  shotsThisFrame = shotNumber;
+  const isStrike = shotNumber === 1 && knockedDown === pins.length;
+  frameCompleteAfterRoll = isStrike || shotNumber >= 2;
   if (followBallDuringRoll && isBallView && !isPinCameraActive) exitBallView();
-  const result = knockedDown === 10 ? "Strike!" : `${knockedDown} pin${knockedDown === 1 ? "" : "s"} down`;
+  const result = isStrike
+    ? "Strike!"
+    : knockedDown === pins.length
+      ? "Spare!"
+      : `${knockedDown} pin${knockedDown === 1 ? "" : "s"} down`;
   setRollStatus(
     frameCompleteAfterRoll
       ? `${result} Resetting…`
