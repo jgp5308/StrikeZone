@@ -1127,14 +1127,15 @@ function updatePinResetAnimation(deltaSeconds) {
   pinResetAnimation = null;
   resetBallForNextShot();
   syncPhysicsToScene();
+  if (isBallView && isPinCameraActive) exitBallView();
+  isPinCameraActive = false;
   setRollStatus("Shot 2 ready");
 }
 
 function resetRoll() {
   if (!frameCompleteAfterRoll) {
-    if (followBallDuringRoll && isBallView) exitBallView();
+    if (isBallView && (!followBallDuringRoll || !isPinCameraActive)) exitBallView();
     followBallDuringRoll = false;
-    isPinCameraActive = false;
     startPinResetAnimation();
     return;
   }
