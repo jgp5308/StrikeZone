@@ -333,6 +333,28 @@ overheadRectangle.castShadow = true;
 overheadRectangle.receiveShadow = true;
 scene.add(overheadRectangle);
 
+const pinsetterDepth = PIN_SPACING_WORLD * 4.3;
+const pinsetter = new THREE.Mesh(
+  new THREE.BoxGeometry(
+    LANE_WIDTH + 2 * GUTTER_WIDTH_WORLD,
+    0.32,
+    pinsetterDepth
+  ),
+  new THREE.MeshStandardMaterial({
+    color: 0x090909,
+    roughness: 0.75,
+    metalness: 0.2,
+  })
+);
+pinsetter.position.set(
+  0,
+  LANE_SURFACE_Y + PIN_HEIGHT_WORLD + 0.8,
+  PIN_FRONT_Z - PIN_SPACING_WORLD * 1.5
+);
+pinsetter.castShadow = true;
+pinsetter.receiveShadow = true;
+scene.add(pinsetter);
+
 const channel = new THREE.Mesh(
   new THREE.BoxGeometry(
     LANE_WIDTH + 2 * GUTTER_WIDTH_WORLD,
