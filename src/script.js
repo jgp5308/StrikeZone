@@ -1047,7 +1047,7 @@ let isLooking = false;
 let isBallView = false;
 const pressedKeys = new Set();
 const movementSpeed = 5;
-const runSpeedMultiplier = 2;
+const runSpeedMultiplier = 1.5;
 
 window.addEventListener("keydown", (event) => {
   const key = event.key.toLowerCase();
