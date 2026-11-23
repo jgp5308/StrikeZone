@@ -1036,6 +1036,8 @@ function startPinResetAnimation() {
     startSweepY: pinSweep.position.y,
     startSweepZ: pinSweep.position.z,
   };
+  isPinCameraActive = true;
+  updatePinCamera();
   setRollStatus("Pinsetter resetting…");
 }
 
@@ -1093,10 +1095,14 @@ function updatePinResetAnimation(deltaSeconds) {
     setterOffset = THREE.MathUtils.lerp(0, setterDownOffset, easedProgress);
     currentPinLift = THREE.MathUtils.lerp(pinLift, 0, easedProgress);
   } else {
-    setSweepPose(pinSweep.userData.baseY, sweepBackZ);
+    setSweepPose(
+      THREE.MathUtils.lerp(sweepDownY, pinSweep.userData.baseY, easedProgress),
+      THREE.MathUtils.lerp(sweepBackZ, animation.startSweepZ, easedProgress)
+    );
     setterOffset = THREE.MathUtils.lerp(setterDownOffset, 0, easedProgress);
   }
 
+  updatePinCamera();
   setPinsetterOffset(setterOffset);
   for (const { pin, translation, rotation } of animation.standingPins) {
     pin.physicsBody.setTranslation(
@@ -1412,7 +1418,7 @@ function resize() {
 window.addEventListener("resize", resize);
 
 function updateMovement(deltaSeconds) {
-  if (isBallView) return;
+  if (isBallView || pinResetAnimation) return;
 
   const forward = new THREE.Vector3(-Math.sin(yaw), 0, -Math.cos(yaw));
   const right = new THREE.Vector3(Math.cos(yaw), 0, -Math.sin(yaw));
