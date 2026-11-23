@@ -314,6 +314,27 @@ createWall({
   depth: BACK_WALL_DEPTH,
 });
 
+const overheadRectangle = new THREE.Mesh(
+  new THREE.BoxGeometry(
+    WALL_OUTER_EDGE_X * 2 + WALL_THICKNESS,
+    0.3,
+    0.16
+  ),
+  new THREE.MeshStandardMaterial({
+    color: 0x000000,
+    roughness: 0.65,
+    metalness: 0.1,
+  })
+);
+overheadRectangle.position.set(
+  0,
+  LANE_SURFACE_Y + PIN_HEIGHT_WORLD + 0.3,
+  WALL_START_Z + 0.04
+);
+overheadRectangle.castShadow = true;
+overheadRectangle.receiveShadow = true;
+scene.add(overheadRectangle);
+
 const channel = new THREE.Mesh(
   new THREE.BoxGeometry(
     LANE_WIDTH + 2 * GUTTER_WIDTH_WORLD,
