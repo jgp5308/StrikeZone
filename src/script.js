@@ -397,58 +397,6 @@ for (let pieceIndex = 0; pieceIndex < 2; pieceIndex += 1) {
   scene.add(pinsetterPiece);
 }
 
-function addPinsetterBeam(start, end, width, depth) {
-  const beamDirection = new THREE.Vector3().subVectors(end, start);
-  const beam = new THREE.Mesh(
-    new THREE.BoxGeometry(width, beamDirection.length(), depth),
-    pinsetterMaterial
-  );
-  beam.position.copy(start).add(end).multiplyScalar(0.5);
-  beam.quaternion.setFromUnitVectors(
-    new THREE.Vector3(0, 1, 0),
-    beamDirection.normalize()
-  );
-  beam.castShadow = true;
-  beam.receiveShadow = true;
-  scene.add(beam);
-}
-
-const pinsetterFrameZ = pinsetterCenterZ + PIN_SPACING_WORLD * 1.9;
-const pinsetterFrameBottomY = pinsetterBaseY - 0.28;
-const pinsetterFrameTopY = pinsetterBaseY + 0.52;
-const pinsetterFrameHalfWidth = PIN_SPACING_WORLD * 2.25;
-addPinsetterBeam(
-  new THREE.Vector3(-pinsetterFrameHalfWidth, pinsetterFrameBottomY, pinsetterFrameZ),
-  new THREE.Vector3(0, pinsetterFrameTopY, pinsetterFrameZ),
-  0.12,
-  0.12
-);
-addPinsetterBeam(
-  new THREE.Vector3(pinsetterFrameHalfWidth, pinsetterFrameBottomY, pinsetterFrameZ),
-  new THREE.Vector3(0, pinsetterFrameTopY, pinsetterFrameZ),
-  0.12,
-  0.12
-);
-addPinsetterBeam(
-  new THREE.Vector3(-pinsetterFrameHalfWidth, pinsetterFrameTopY, pinsetterFrameZ),
-  new THREE.Vector3(pinsetterFrameHalfWidth, pinsetterFrameTopY, pinsetterFrameZ),
-  0.14,
-  0.14
-);
-
-const pinsetterCarriage = new THREE.Mesh(
-  new THREE.BoxGeometry(PIN_SPACING_WORLD * 1.35, 0.28, 0.3),
-  pinsetterMaterial
-);
-pinsetterCarriage.position.set(
-  0,
-  pinsetterFrameBottomY + 0.08,
-  pinsetterFrameZ - 0.03
-);
-pinsetterCarriage.castShadow = true;
-pinsetterCarriage.receiveShadow = true;
-scene.add(pinsetterCarriage);
-
 const channel = new THREE.Mesh(
   new THREE.BoxGeometry(
     LANE_WIDTH + 2 * GUTTER_WIDTH_WORLD,
