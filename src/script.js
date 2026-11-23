@@ -85,6 +85,7 @@ const FOLLOW_CAMERA_HEIGHT = 1.1;
 const FOLLOW_CAMERA_LOOK_AHEAD = 5;
 const FOLLOW_PIN_CAMERA_DISTANCE_FEET = 45;
 const PIN_CAMERA_DISTANCE = 4.5;
+const PIN_CAMERA_HEIGHT = 1.05;
 const followCameraDirection = new THREE.Vector3();
 const followCameraTarget = new THREE.Vector3();
 
@@ -1191,7 +1192,7 @@ function updateFollowBallCamera() {
 
 function updatePinCamera() {
   const targetY = LANE_SURFACE_Y + PIN_HEIGHT_WORLD * 0.65;
-  camera.position.set(0, PLAYER_HEIGHT_WORLD, PIN_FRONT_Z + PIN_CAMERA_DISTANCE);
+  camera.position.set(0, PIN_CAMERA_HEIGHT, PIN_FRONT_Z + PIN_CAMERA_DISTANCE);
   yaw = 0;
   pitch = -Math.atan2(camera.position.y - targetY, PIN_CAMERA_DISTANCE);
 }
