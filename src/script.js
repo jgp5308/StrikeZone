@@ -333,23 +333,61 @@ overheadRectangle.castShadow = true;
 overheadRectangle.receiveShadow = true;
 scene.add(overheadRectangle);
 
-const pinsetterDepth = PIN_SPACING_WORLD * 4.3;
+const pinsetterCenterZ = PIN_FRONT_Z - PIN_SPACING_WORLD * 1.5;
+const pinsetterShape = new THREE.Shape();
+const pinsetterTriangleHalfWidth = PIN_SPACING_WORLD * 2.05;
+const pinsetterTriangleFront = PIN_SPACING_WORLD * 2.05;
+const pinsetterTriangleBack = -PIN_SPACING_WORLD * 2.05;
+pinsetterShape.moveTo(0, pinsetterTriangleFront);
+pinsetterShape.lineTo(
+  -pinsetterTriangleHalfWidth,
+  pinsetterTriangleBack
+);
+pinsetterShape.lineTo(
+  pinsetterTriangleHalfWidth,
+  pinsetterTriangleBack
+);
+pinsetterShape.closePath();
+
+for (let row = 0; row < 4; row += 1) {
+  for (let column = 0; column <= row; column += 1) {
+    const hole = new THREE.Path();
+    const holeX = (column - row / 2) * PIN_SPACING_WORLD;
+    const holeZ = PIN_SPACING_WORLD * 1.5 - row * PIN_SPACING_WORLD;
+    hole.absarc(
+      holeX,
+      holeZ,
+      PIN_SPACING_WORLD * 0.23,
+      0,
+      Math.PI * 2,
+      false
+    );
+    pinsetterShape.holes.push(hole);
+  }
+}
+
+const PINSETTER_THICKNESS = 0.3;
+const pinsetterGeometry = new THREE.ExtrudeGeometry(pinsetterShape, {
+  depth: PINSETTER_THICKNESS,
+  bevelEnabled: true,
+  bevelSegments: 2,
+  bevelSize: 0.04,
+  bevelThickness: 0.04,
+  steps: 1,
+});
+pinsetterGeometry.rotateX(Math.PI / 2);
 const pinsetter = new THREE.Mesh(
-  new THREE.BoxGeometry(
-    LANE_WIDTH + 2 * GUTTER_WIDTH_WORLD,
-    0.32,
-    pinsetterDepth
-  ),
+  pinsetterGeometry,
   new THREE.MeshStandardMaterial({
-    color: 0x090909,
-    roughness: 0.75,
-    metalness: 0.2,
+    color: 0x68727a,
+    roughness: 0.72,
+    metalness: 0.62,
   })
 );
 pinsetter.position.set(
   0,
-  LANE_SURFACE_Y + PIN_HEIGHT_WORLD + 0.8,
-  PIN_FRONT_Z - PIN_SPACING_WORLD * 1.5
+  LANE_SURFACE_Y + PIN_HEIGHT_WORLD + 0.55 + PINSETTER_THICKNESS / 2,
+  pinsetterCenterZ
 );
 pinsetter.castShadow = true;
 pinsetter.receiveShadow = true;
