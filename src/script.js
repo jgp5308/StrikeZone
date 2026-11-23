@@ -383,6 +383,7 @@ const pinsetterMaterial = new THREE.MeshStandardMaterial({
   metalness: 0.92,
 });
 const pinsetterBaseY = LANE_SURFACE_Y + PIN_HEIGHT_WORLD + 0.55;
+const pinsetterPieces = [];
 for (let pieceIndex = 0; pieceIndex < 2; pieceIndex += 1) {
   const pinsetterPiece = new THREE.Mesh(pinsetterGeometry, pinsetterMaterial);
   pinsetterPiece.position.set(
@@ -392,8 +393,10 @@ for (let pieceIndex = 0; pieceIndex < 2; pieceIndex += 1) {
       PINSETTER_THICKNESS,
     pinsetterCenterZ
   );
+  pinsetterPiece.userData.baseY = pinsetterPiece.position.y;
   pinsetterPiece.castShadow = true;
   pinsetterPiece.receiveShadow = true;
+  pinsetterPieces.push(pinsetterPiece);
   scene.add(pinsetterPiece);
 }
 
@@ -411,6 +414,8 @@ pinSweep.position.set(
   pinsetterBaseY + PINSETTER_THICKNESS + PINSETTER_GAP / 2,
   WALL_START_Z - 0.12
 );
+pinSweep.userData.baseY = pinSweep.position.y;
+pinSweep.userData.baseZ = pinSweep.position.z;
 pinSweep.castShadow = true;
 pinSweep.receiveShadow = true;
 scene.add(pinSweep);
@@ -418,6 +423,7 @@ scene.add(pinSweep);
 const sweepArmEndZ = WALL_END_Z - BACK_WALL_DEPTH / 2;
 const sweepArmLength = pinSweep.position.z - sweepArmEndZ;
 const sweepArmX = SWEEP_HALF_WIDTH;
+const sweepArms = [];
 for (const side of [-1, 1]) {
   const sweepArm = new THREE.Mesh(
     new THREE.BoxGeometry(0.12, 0.12, sweepArmLength),
@@ -430,6 +436,7 @@ for (const side of [-1, 1]) {
   );
   sweepArm.castShadow = true;
   sweepArm.receiveShadow = true;
+  sweepArms.push(sweepArm);
   scene.add(sweepArm);
 }
 
@@ -843,6 +850,7 @@ patternSelect.addEventListener("change", () => loadPattern(patternSelect.value))
 patternSelect.addEventListener("click", () => loadPattern(patternSelect.value));
 let ballInPlay = false;
 let ballInReturnChannel = false;
+let pinResetAnimation = null;
 let shotsThisFrame = 0;
 let frameCompleteAfterRoll = false;
 let resetTimer = 0;
@@ -884,7 +892,7 @@ function standingPinCount() {
 }
 
 function throwBall() {
-  if (ballInPlay || resetTimer > 0) return;
+  if (ballInPlay || resetTimer > 0 || pinResetAnimation) return;
 
   const direction = new THREE.Vector3(
     Math.sin(launchAngle),
@@ -975,7 +983,161 @@ function finishRoll() {
   resetWaitElapsed = 0;
 }
 
+function setPinsetterOffset(offsetY) {
+  for (const piece of pinsetterPieces) {
+    piece.position.y = piece.userData.baseY + offsetY;
+  }
+}
+
+function setSweepPose(y, z) {
+  pinSweep.position.y = y;
+  pinSweep.position.z = z;
+  const armLength = z - sweepArmEndZ;
+  for (const arm of sweepArms) {
+    arm.scale.z = armLength / sweepArmLength;
+    arm.position.y = y;
+    arm.position.z = (z + sweepArmEndZ) / 2;
+  }
+}
+
+function resetBallForNextShot() {
+  ballInReturnChannel = false;
+  ballPhysicsBody.setGravityScale(0, true);
+  ballPhysicsBody.setTranslation(
+    { x: BALL_FOUL_POSITION.x, y: BALL_FOUL_POSITION.y, z: BALL_FOUL_POSITION.z },
+    true
+  );
+  ballPhysicsBody.setRotation({ x: 0, y: 0, z: 0, w: 1 }, true);
+  ballPhysicsBody.setLinvel({ x: 0, y: 0, z: 0 }, true);
+  ballPhysicsBody.setAngvel({ x: 0, y: 0, z: 0 }, true);
+}
+
+function startPinResetAnimation() {
+  const standingPins = pins.filter(isPinOnSpot).map((pin) => {
+    const translation = pin.physicsBody.translation();
+    const rotation = pin.physicsBody.rotation();
+    return {
+      pin,
+      translation: { x: translation.x, y: translation.y, z: translation.z },
+      rotation: { x: rotation.x, y: rotation.y, z: rotation.z, w: rotation.w },
+    };
+  });
+  const fallenPins = pins.filter((pin) => !isPinOnSpot(pin));
+  for (const pin of pins) {
+    pin.physicsBody.setGravityScale(0, true);
+    pin.physicsBody.setLinvel({ x: 0, y: 0, z: 0 }, true);
+    pin.physicsBody.setAngvel({ x: 0, y: 0, z: 0 }, true);
+  }
+  pinResetAnimation = {
+    elapsed: 0,
+    standingPins,
+    fallenPins,
+    startSweepY: pinSweep.position.y,
+    startSweepZ: pinSweep.position.z,
+  };
+  setRollStatus("Pinsetter resetting…");
+}
+
+function updatePinResetAnimation(deltaSeconds) {
+  if (!pinResetAnimation) return;
+  const animation = pinResetAnimation;
+  animation.elapsed += deltaSeconds;
+  const phases = [
+    ["sweepDown", 0.55],
+    ["setterDown", 0.65],
+    ["setterUp", 0.55],
+    ["sweepBack", 0.9],
+    ["setterPlace", 0.65],
+    ["setterRaise", 0.55],
+  ];
+  let phaseStart = 0;
+  let phaseName = phases[phases.length - 1][0];
+  let phaseProgress = 1;
+  for (const [candidateName, duration] of phases) {
+    if (animation.elapsed <= phaseStart + duration) {
+      phaseName = candidateName;
+      phaseProgress = THREE.MathUtils.clamp(
+        (animation.elapsed - phaseStart) / duration,
+        0,
+        1
+      );
+      break;
+    }
+    phaseStart += duration;
+  }
+  const ease = (value) => value * value * (3 - 2 * value);
+  const easedProgress = ease(phaseProgress);
+  const setterDownOffset = -0.58;
+  const pinLift = PIN_HEIGHT_WORLD * 0.6;
+  let setterOffset = 0;
+  let currentPinLift = 0;
+  const sweepDownY = LANE_SURFACE_Y + 0.18;
+  const sweepBackZ = CHANNEL_START_Z - 0.2;
+
+  if (phaseName === "sweepDown") {
+    setSweepPose(THREE.MathUtils.lerp(animation.startSweepY, sweepDownY, easedProgress), animation.startSweepZ);
+  } else if (phaseName === "setterDown") {
+    setSweepPose(sweepDownY, animation.startSweepZ);
+    setterOffset = THREE.MathUtils.lerp(0, setterDownOffset, easedProgress);
+    currentPinLift = THREE.MathUtils.lerp(0, pinLift * 0.35, easedProgress);
+  } else if (phaseName === "setterUp") {
+    setSweepPose(sweepDownY, animation.startSweepZ);
+    setterOffset = THREE.MathUtils.lerp(setterDownOffset, 0, easedProgress);
+    currentPinLift = THREE.MathUtils.lerp(pinLift * 0.35, pinLift, easedProgress);
+  } else if (phaseName === "sweepBack") {
+    setSweepPose(sweepDownY, THREE.MathUtils.lerp(animation.startSweepZ, sweepBackZ, easedProgress));
+    currentPinLift = pinLift;
+  } else if (phaseName === "setterPlace") {
+    setSweepPose(sweepDownY, sweepBackZ);
+    setterOffset = THREE.MathUtils.lerp(0, setterDownOffset, easedProgress);
+    currentPinLift = THREE.MathUtils.lerp(pinLift, 0, easedProgress);
+  } else {
+    setSweepPose(pinSweep.userData.baseY, sweepBackZ);
+    setterOffset = THREE.MathUtils.lerp(setterDownOffset, 0, easedProgress);
+  }
+
+  setPinsetterOffset(setterOffset);
+  for (const { pin, translation, rotation } of animation.standingPins) {
+    pin.physicsBody.setTranslation(
+      { x: translation.x, y: translation.y + currentPinLift, z: translation.z },
+      true
+    );
+    pin.physicsBody.setRotation(rotation, true);
+  }
+  if (phaseName === "sweepBack") {
+    for (const pin of animation.fallenPins) {
+      pin.physicsBody.setTranslation(
+        { x: pin.origin.x, y: CHANNEL_FLOOR_Y + 0.18, z: sweepBackZ },
+        true
+      );
+    }
+  }
+
+  const totalDuration = phases.reduce((total, [, duration]) => total + duration, 0);
+  if (animation.elapsed < totalDuration) return;
+
+  setPinsetterOffset(0);
+  setSweepPose(pinSweep.userData.baseY, pinSweep.userData.baseZ);
+  for (const { pin, translation, rotation } of animation.standingPins) {
+    pin.physicsBody.setTranslation(translation, true);
+    pin.physicsBody.setRotation(rotation, true);
+    pin.physicsBody.setGravityScale(1, true);
+  }
+  for (const pin of animation.fallenPins) pin.physicsBody.setGravityScale(1, true);
+  pinResetAnimation = null;
+  resetBallForNextShot();
+  syncPhysicsToScene();
+  setRollStatus("Shot 2 ready");
+}
+
 function resetRoll() {
+  if (!frameCompleteAfterRoll) {
+    if (followBallDuringRoll && isBallView) exitBallView();
+    followBallDuringRoll = false;
+    isPinCameraActive = false;
+    startPinResetAnimation();
+    return;
+  }
   const resetPins = frameCompleteAfterRoll;
   if (followBallDuringRoll && isBallView) exitBallView();
   followBallDuringRoll = false;
@@ -1289,6 +1451,7 @@ function animate(currentTime = 0) {
       }
     }
   }
+  updatePinResetAnimation(deltaSeconds);
   updateBall(deltaSeconds);
   updateBallAim(deltaSeconds);
   physicsWorld.step();
