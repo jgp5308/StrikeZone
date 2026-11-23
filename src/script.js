@@ -414,6 +414,23 @@ pinSweep.castShadow = true;
 pinSweep.receiveShadow = true;
 scene.add(pinSweep);
 
+const sweepArmHeight = 0.7;
+const sweepArmX = LANE_WIDTH / 2 + GUTTER_WIDTH_WORLD;
+for (const side of [-1, 1]) {
+  const sweepArm = new THREE.Mesh(
+    new THREE.BoxGeometry(0.12, sweepArmHeight, 0.12),
+    pinsetterMaterial
+  );
+  sweepArm.position.set(
+    side * sweepArmX,
+    pinSweep.position.y - sweepArmHeight / 2,
+    pinSweep.position.z
+  );
+  sweepArm.castShadow = true;
+  sweepArm.receiveShadow = true;
+  scene.add(sweepArm);
+}
+
 const channel = new THREE.Mesh(
   new THREE.BoxGeometry(
     LANE_WIDTH + 2 * GUTTER_WIDTH_WORLD,
