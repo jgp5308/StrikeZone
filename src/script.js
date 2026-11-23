@@ -366,7 +366,8 @@ for (let row = 0; row < 4; row += 1) {
   }
 }
 
-const PINSETTER_THICKNESS = 0.3;
+const PINSETTER_THICKNESS = 0.12;
+const PINSETTER_GAP = 0.08;
 const pinsetterGeometry = new THREE.ExtrudeGeometry(pinsetterShape, {
   depth: PINSETTER_THICKNESS,
   bevelEnabled: true,
@@ -376,22 +377,25 @@ const pinsetterGeometry = new THREE.ExtrudeGeometry(pinsetterShape, {
   steps: 1,
 });
 pinsetterGeometry.rotateX(Math.PI / 2);
-const pinsetter = new THREE.Mesh(
-  pinsetterGeometry,
-  new THREE.MeshStandardMaterial({
-    color: 0x68727a,
-    roughness: 0.72,
-    metalness: 0.62,
-  })
-);
-pinsetter.position.set(
-  0,
-  LANE_SURFACE_Y + PIN_HEIGHT_WORLD + 0.55 + PINSETTER_THICKNESS / 2,
-  pinsetterCenterZ
-);
-pinsetter.castShadow = true;
-pinsetter.receiveShadow = true;
-scene.add(pinsetter);
+const pinsetterMaterial = new THREE.MeshStandardMaterial({
+  color: 0x0b0d0f,
+  roughness: 0.24,
+  metalness: 0.92,
+});
+const pinsetterBaseY = LANE_SURFACE_Y + PIN_HEIGHT_WORLD + 0.55;
+for (let pieceIndex = 0; pieceIndex < 2; pieceIndex += 1) {
+  const pinsetterPiece = new THREE.Mesh(pinsetterGeometry, pinsetterMaterial);
+  pinsetterPiece.position.set(
+    0,
+    pinsetterBaseY +
+      pieceIndex * (PINSETTER_THICKNESS + PINSETTER_GAP) +
+      PINSETTER_THICKNESS,
+    pinsetterCenterZ
+  );
+  pinsetterPiece.castShadow = true;
+  pinsetterPiece.receiveShadow = true;
+  scene.add(pinsetterPiece);
+}
 
 const channel = new THREE.Mesh(
   new THREE.BoxGeometry(
