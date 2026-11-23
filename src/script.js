@@ -225,6 +225,129 @@ const GUTTER_WIDTH_WORLD = (GUTTER_WIDTH_INCHES / 12) * WORLD_UNITS_PER_FOOT;
 const GUTTER_START_DROP_INCHES = LANE_DESIGN.gutterStartDropInches;
 const GUTTER_MAX_DROP_INCHES = LANE_DESIGN.gutterMaxDropInches;
 
+// Low lane barriers keep pins in the play area and give pin action a visible
+// surface to deflect from without narrowing the lane itself.
+const WALL_HEIGHT = 1.25;
+const WALL_THICKNESS = 0.14;
+const WALL_TOP_HEIGHT = 0.08;
+const WALL_BASE_Y = -0.02;
+const PIN_DECK_FRONT_Z = PIN_FRONT_Z + PIN_SPACING_WORLD * 0.9;
+const PIN_DECK_BACK_Z =
+  PIN_FRONT_Z - PIN_SPACING_WORLD * 3 - PIN_SPACING_WORLD * 0.75;
+const WALL_START_Z = PIN_DECK_FRONT_Z;
+const WALL_END_Z = PIN_DECK_BACK_Z - PIN_SPACING_WORLD * 0.55;
+const WALL_LENGTH = WALL_START_Z - WALL_END_Z;
+const WALL_OUTER_EDGE_X =
+  LANE_WIDTH / 2 + GUTTER_WIDTH_WORLD + WALL_THICKNESS / 2;
+const WALL_MATERIAL = new THREE.MeshStandardMaterial({
+  color: 0x050505,
+  roughness: 0.8,
+  metalness: 0.1,
+});
+const WALL_TOP_MATERIAL = new THREE.MeshStandardMaterial({
+  color: 0x111111,
+  roughness: 0.65,
+  metalness: 0.15,
+});
+const CHANNEL_START_Z = lane.position.z - LANE_SURFACE_LENGTH_WORLD / 2 - 0.02;
+const CHANNEL_LENGTH = CHANNEL_START_Z - WALL_END_Z;
+const CHANNEL_FLOOR_Y = -0.22;
+const CHANNEL_FLOOR_HEIGHT = 0.08;
+const CHANNEL_MATERIAL = new THREE.MeshStandardMaterial({
+  color: 0x030303,
+  roughness: 0.8,
+  metalness: 0.05,
+});
+
+function createWall({ x, z, width, depth }) {
+  const wall = new THREE.Mesh(
+    new THREE.BoxGeometry(width, WALL_HEIGHT, depth),
+    WALL_MATERIAL
+  );
+  wall.position.set(x, WALL_BASE_Y + WALL_HEIGHT / 2, z);
+  wall.castShadow = true;
+  wall.receiveShadow = true;
+  scene.add(wall);
+
+  const topCap = new THREE.Mesh(
+    new THREE.BoxGeometry(width + 0.04, WALL_TOP_HEIGHT, depth + 0.04),
+    WALL_TOP_MATERIAL
+  );
+  topCap.position.set(x, WALL_BASE_Y + WALL_HEIGHT + WALL_TOP_HEIGHT / 2, z);
+  topCap.castShadow = true;
+  topCap.receiveShadow = true;
+  scene.add(topCap);
+
+  const physicsBody = physicsWorld.createRigidBody(
+    RAPIER.RigidBodyDesc.fixed().setTranslation(
+      x,
+      WALL_BASE_Y + WALL_HEIGHT / 2,
+      z
+    )
+  );
+  physicsWorld.createCollider(
+    RAPIER.ColliderDesc.cuboid(width / 2, WALL_HEIGHT / 2, depth / 2)
+      .setFriction(0.45)
+      .setRestitution(0.55),
+    physicsBody
+  );
+}
+
+createWall({
+  x: -WALL_OUTER_EDGE_X,
+  z: (WALL_START_Z + WALL_END_Z) / 2,
+  width: WALL_THICKNESS,
+  depth: WALL_LENGTH,
+});
+createWall({
+  x: WALL_OUTER_EDGE_X,
+  z: (WALL_START_Z + WALL_END_Z) / 2,
+  width: WALL_THICKNESS,
+  depth: WALL_LENGTH,
+});
+
+const BACK_WALL_DEPTH = WALL_THICKNESS;
+createWall({
+  x: 0,
+  z: WALL_END_Z - BACK_WALL_DEPTH / 2,
+  width: LANE_WIDTH + 2 * (GUTTER_WIDTH_WORLD + WALL_THICKNESS),
+  depth: BACK_WALL_DEPTH,
+});
+
+const channel = new THREE.Mesh(
+  new THREE.BoxGeometry(
+    LANE_WIDTH + 2 * GUTTER_WIDTH_WORLD,
+    CHANNEL_FLOOR_HEIGHT,
+    CHANNEL_LENGTH
+  ),
+  CHANNEL_MATERIAL
+);
+channel.position.set(
+  0,
+  CHANNEL_FLOOR_Y,
+  (CHANNEL_START_Z + WALL_END_Z) / 2
+);
+channel.receiveShadow = true;
+scene.add(channel);
+
+const channelPhysicsBody = physicsWorld.createRigidBody(
+  RAPIER.RigidBodyDesc.fixed().setTranslation(
+    0,
+    CHANNEL_FLOOR_Y,
+    (CHANNEL_START_Z + WALL_END_Z) / 2
+  )
+);
+physicsWorld.createCollider(
+  RAPIER.ColliderDesc.cuboid(
+    (LANE_WIDTH + 2 * GUTTER_WIDTH_WORLD) / 2,
+    CHANNEL_FLOOR_HEIGHT / 2,
+    CHANNEL_LENGTH / 2
+  )
+    .setFriction(0.65)
+    .setRestitution(0.02),
+  channelPhysicsBody
+);
+
 const gutterCrossSectionSegments = 24;
 const gutterLengthSegments = 1;
 function createGutter(side) {
@@ -600,6 +723,7 @@ function loadPattern(patternId) {
 patternSelect.addEventListener("change", () => loadPattern(patternSelect.value));
 patternSelect.addEventListener("click", () => loadPattern(patternSelect.value));
 let ballInPlay = false;
+let ballInReturnChannel = false;
 let resetTimer = 0;
 let resetWaitElapsed = 0;
 let rollElapsed = 0;
@@ -638,6 +762,8 @@ function throwBall() {
   ballSpinRadiansPerSecond = ballSettings.revRateRpm * Math.PI * 2 / 60;
   followBallDuringRoll = followBallToggle.checked;
   isPinCameraActive = false;
+  ballInReturnChannel = false;
+  ballPhysicsBody.setGravityScale(0, true);
   ballInPlay = true;
   rollElapsed = 0;
   launchGuide.visible = false;
@@ -659,6 +785,8 @@ function enterBallView() {
   ballPhysicsBody.setRotation({ x: 0, y: 0, z: 0, w: 1 }, true);
   ballPhysicsBody.setLinvel({ x: 0, y: 0, z: 0 }, true);
   ballPhysicsBody.setAngvel({ x: 0, y: 0, z: 0 }, true);
+  ballInReturnChannel = false;
+  ballPhysicsBody.setGravityScale(0, true);
   launchAngle = 0;
   camera.position.set(0, BALL_FOUL_POSITION.y + 1.1, LANE_FRONT_Z + 1.4);
   yaw = 0;
@@ -703,6 +831,8 @@ function resetRoll() {
   followBallDuringRoll = false;
   isPinCameraActive = false;
   resetWaitElapsed = 0;
+  ballInReturnChannel = false;
+  ballPhysicsBody.setGravityScale(0, true);
   ballPhysicsBody.setTranslation(
     { x: BALL_FOUL_POSITION.x, y: BALL_FOUL_POSITION.y, z: BALL_FOUL_POSITION.z },
     true
@@ -766,7 +896,27 @@ function arePinsSettled() {
 }
 
 function syncPhysicsToScene() {
-  const ballTranslation = ballPhysicsBody.translation();
+  let ballTranslation = ballPhysicsBody.translation();
+  if (ballInPlay && !ballInReturnChannel && ballTranslation.z <= CHANNEL_START_Z) {
+    ballInReturnChannel = true;
+    ballPhysicsBody.setGravityScale(1, true);
+  }
+  if (ballInReturnChannel && ballTranslation.z > CHANNEL_START_Z - BALL_RADIUS_WORLD) {
+    const currentVelocity = ballPhysicsBody.linvel();
+    ballPhysicsBody.setTranslation(
+      {
+        x: ballTranslation.x,
+        y: ballTranslation.y,
+        z: CHANNEL_START_Z - BALL_RADIUS_WORLD,
+      },
+      true
+    );
+    ballPhysicsBody.setLinvel(
+      { x: currentVelocity.x, y: currentVelocity.y, z: Math.min(currentVelocity.z, 0) },
+      true
+    );
+    ballTranslation = ballPhysicsBody.translation();
+  }
   const ballRotation = ballPhysicsBody.rotation();
   ball.position.set(ballTranslation.x, ballTranslation.y, ballTranslation.z);
   ball.quaternion.set(ballRotation.x, ballRotation.y, ballRotation.z, ballRotation.w);
@@ -803,6 +953,10 @@ function updateBall(deltaSeconds) {
 
   rollElapsed += deltaSeconds;
   const ballTranslation = ballPhysicsBody.translation();
+  if (!ballInReturnChannel && ballTranslation.z <= CHANNEL_START_Z) {
+    ballInReturnChannel = true;
+    ballPhysicsBody.setGravityScale(1, true);
+  }
   const distanceFeet = Math.max(0, (LANE_FRONT_Z - ballTranslation.z) / WORLD_UNITS_PER_FOOT);
   const oilDensity = getOilDensity(ball.position.x, distanceFeet);
   const dryLaneFactor = 1 - oilDensity;
@@ -816,7 +970,11 @@ function updateBall(deltaSeconds) {
     3.5
   );
 
-  ballPhysicsBody.setLinvel({ x: ballVelocity.x, y: 0, z: ballVelocity.z }, true);
+  const verticalVelocity = ballInReturnChannel ? ballPhysicsBody.linvel().y : 0;
+  ballPhysicsBody.setLinvel(
+    { x: ballVelocity.x, y: verticalVelocity, z: ballVelocity.z },
+    true
+  );
   ballPhysicsBody.setAngvel(
     {
       x: ballVelocity.z / BALL_RADIUS_WORLD,
@@ -826,7 +984,7 @@ function updateBall(deltaSeconds) {
     true
   );
 
-  if (ballTranslation.z < PIN_FRONT_Z - PIN_SPACING_WORLD * 4 || rollElapsed > 5) finishRoll();
+  if (ballTranslation.z < WALL_END_Z + 0.12 || rollElapsed > 5) finishRoll();
 }
 
 function updateBallAim(deltaSeconds) {
