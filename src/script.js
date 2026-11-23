@@ -397,6 +397,23 @@ for (let pieceIndex = 0; pieceIndex < 2; pieceIndex += 1) {
   scene.add(pinsetterPiece);
 }
 
+const pinSweep = new THREE.Mesh(
+  new THREE.BoxGeometry(
+    LANE_WIDTH + 2 * GUTTER_WIDTH_WORLD,
+    0.14,
+    0.12
+  ),
+  pinsetterMaterial
+);
+pinSweep.position.set(
+  0,
+  LANE_SURFACE_Y + 0.36,
+  PIN_DECK_BACK_Z + 0.12
+);
+pinSweep.castShadow = true;
+pinSweep.receiveShadow = true;
+scene.add(pinSweep);
+
 const channel = new THREE.Mesh(
   new THREE.BoxGeometry(
     LANE_WIDTH + 2 * GUTTER_WIDTH_WORLD,
