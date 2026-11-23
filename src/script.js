@@ -320,10 +320,8 @@ const overheadRectangle = new THREE.Mesh(
     0.3,
     0.16
   ),
-  new THREE.MeshStandardMaterial({
+  new THREE.MeshBasicMaterial({
     color: 0x000000,
-    roughness: 0.65,
-    metalness: 0.1,
   })
 );
 overheadRectangle.position.set(
@@ -1049,6 +1047,7 @@ let isLooking = false;
 let isBallView = false;
 const pressedKeys = new Set();
 const movementSpeed = 5;
+const runSpeedMultiplier = 2;
 
 window.addEventListener("keydown", (event) => {
   const key = event.key.toLowerCase();
@@ -1068,6 +1067,11 @@ window.addEventListener("keydown", (event) => {
     return;
   }
   if (key === "arrowleft" || key === "arrowright") {
+    event.preventDefault();
+    pressedKeys.add(key);
+    return;
+  }
+  if (key === "shift") {
     event.preventDefault();
     pressedKeys.add(key);
     return;
@@ -1121,7 +1125,10 @@ function updateMovement(deltaSeconds) {
   if (pressedKeys.has("a")) movement.sub(right);
 
   if (movement.lengthSq() > 0) {
-    movement.normalize().multiplyScalar(movementSpeed * deltaSeconds);
+    const speed = pressedKeys.has("shift")
+      ? movementSpeed * runSpeedMultiplier
+      : movementSpeed;
+    movement.normalize().multiplyScalar(speed * deltaSeconds);
     camera.position.add(movement);
   }
 
