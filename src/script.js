@@ -743,6 +743,8 @@ patternSelect.addEventListener("change", () => loadPattern(patternSelect.value))
 patternSelect.addEventListener("click", () => loadPattern(patternSelect.value));
 let ballInPlay = false;
 let ballInReturnChannel = false;
+let shotsThisFrame = 0;
+let frameCompleteAfterRoll = false;
 let resetTimer = 0;
 let resetWaitElapsed = 0;
 let rollElapsed = 0;
@@ -836,9 +838,15 @@ function finishRoll() {
   ballPhysicsBody.setLinvel({ x: 0, y: 0, z: 0 }, true);
   ballPhysicsBody.setAngvel({ x: 0, y: 0, z: 0 }, true);
   const knockedDown = pins.length - standingPinCount();
+  shotsThisFrame += 1;
+  frameCompleteAfterRoll = standingPinCount() === 0 || shotsThisFrame >= 2;
   if (followBallDuringRoll && isBallView && !isPinCameraActive) exitBallView();
   const result = knockedDown === 10 ? "Strike!" : `${knockedDown} pin${knockedDown === 1 ? "" : "s"} down`;
-  setRollStatus(`${result} Resetting…`);
+  setRollStatus(
+    frameCompleteAfterRoll
+      ? `${result} Resetting…`
+      : `${result} • Shot 2 ready…`
+  );
   resetTimer = followBallDuringRoll
     ? FOLLOW_RESET_DELAY_SECONDS
     : NORMAL_RESET_DELAY_SECONDS;
@@ -846,10 +854,12 @@ function finishRoll() {
 }
 
 function resetRoll() {
+  const resetPins = frameCompleteAfterRoll;
   if (followBallDuringRoll && isBallView) exitBallView();
   followBallDuringRoll = false;
   isPinCameraActive = false;
   resetWaitElapsed = 0;
+  frameCompleteAfterRoll = false;
   ballInReturnChannel = false;
   ballPhysicsBody.setGravityScale(0, true);
   ballPhysicsBody.setTranslation(
@@ -859,19 +869,22 @@ function resetRoll() {
   ballPhysicsBody.setRotation({ x: 0, y: 0, z: 0, w: 1 }, true);
   ballPhysicsBody.setLinvel({ x: 0, y: 0, z: 0 }, true);
   ballPhysicsBody.setAngvel({ x: 0, y: 0, z: 0 }, true);
-  for (const pin of pins) {
-    pin.knocked = false;
-    pin.physicsBody.setTranslation(
-      { x: pin.origin.x, y: pin.origin.y + pin.centerOfMassHeight, z: pin.origin.z },
-      true
-    );
-    pin.physicsBody.setRotation({ x: 0, y: 0, z: 0, w: 1 }, true);
-    pin.physicsBody.setLinvel({ x: 0, y: 0, z: 0 }, true);
-    pin.physicsBody.setAngvel({ x: 0, y: 0, z: 0 }, true);
-    pin.physicsBody.wakeUp();
+  if (resetPins) {
+    shotsThisFrame = 0;
+    for (const pin of pins) {
+      pin.knocked = false;
+      pin.physicsBody.setTranslation(
+        { x: pin.origin.x, y: pin.origin.y + pin.centerOfMassHeight, z: pin.origin.z },
+        true
+      );
+      pin.physicsBody.setRotation({ x: 0, y: 0, z: 0, w: 1 }, true);
+      pin.physicsBody.setLinvel({ x: 0, y: 0, z: 0 }, true);
+      pin.physicsBody.setAngvel({ x: 0, y: 0, z: 0 }, true);
+      pin.physicsBody.wakeUp();
+    }
   }
   syncPhysicsToScene();
-  setRollStatus("Ready to roll");
+  setRollStatus(resetPins ? "Ready to roll" : "Shot 2 ready");
 }
 
 function updateFollowBallCamera() {
