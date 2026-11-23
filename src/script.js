@@ -763,8 +763,24 @@ function setRollStatus(message) {
   rollStatus.textContent = message;
 }
 
+function isPinOnSpot(pin) {
+  const translation = pin.physicsBody.translation();
+  const horizontalOffset = Math.hypot(
+    translation.x - pin.origin.x,
+    translation.z - pin.origin.z
+  );
+  const rotation = pin.physicsBody.rotation();
+  const upDirection = new THREE.Vector3(0, 1, 0).applyQuaternion(
+    new THREE.Quaternion(rotation.x, rotation.y, rotation.z, rotation.w)
+  );
+  return (
+    horizontalOffset <= PIN_SPACING_WORLD * 0.45 &&
+    upDirection.y >= 0.7
+  );
+}
+
 function standingPinCount() {
-  return pins.reduce((count, pin) => count + (pin.knocked ? 0 : 1), 0);
+  return pins.reduce((count, pin) => count + (isPinOnSpot(pin) ? 1 : 0), 0);
 }
 
 function throwBall() {
