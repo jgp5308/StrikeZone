@@ -408,7 +408,7 @@ const pinSweep = new THREE.Mesh(
 pinSweep.position.set(
   0,
   LANE_SURFACE_Y + 0.36,
-  PIN_DECK_BACK_Z + 0.12
+  WALL_START_Z - 0.12
 );
 pinSweep.castShadow = true;
 pinSweep.receiveShadow = true;
